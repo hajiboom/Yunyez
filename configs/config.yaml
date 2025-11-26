@@ -1,0 +1,12 @@
+app:
+  name: Yunyez # 项目名称
+  env: dev # 环境变量，dev 为开发环境，prod 为生产环境
+  debug: true # 开发模式追加日志打印到控制台
+
+
+# 日志配置
+logger:
+  storage: storage/logs # 日志存储路径
+  expire: 90              # 日志过期时间，单位：天
+
+
