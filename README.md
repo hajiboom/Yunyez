@@ -1,6 +1,6 @@
-# 云野迹(Yunyez) - 智能旅行打卡物联网系统
+# 云也子(Yunyez)
 
-![项目架构图](docs/architecture.png)（后续补一张架构图，用DrawIO画，免费且简单）
+![项目结构图](docs/architecture.png)
 
 ## 🌟 项目简介
 云野迹(Yunyez) 是一个 **定制电子宠物**，核心目标是打通“智能设备-后端服务-数据可视化”全链路：
