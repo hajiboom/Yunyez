@@ -18,3 +18,20 @@ const (
 	WorkingStatusActive = "active" // 活动中
 	WorkingStatusBusy   = "busy"   // 忙碌
 )
+
+// vendor 厂商
+const (
+	Vendor_Public = "public"
+	Vendor_Yunyez = "yunyez"
+	Vendor_Test   = "test"
+)
+
+// GetVendor 获取厂商名称映射
+func GetVendor() map[string]string {
+	return map[string]string{
+		Vendor_Public: "公版",
+		Vendor_Yunyez: "云也之",
+		Vendor_Test:   "测试",
+	}
+}
+

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"yunyez/internal/common/logger"
+	"yunyez/pkg/logger"
 	"yunyez/internal/common/tools"
 	"yunyez/internal/model/device"
 	"yunyez/pkg/postgre"

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Memory - Precision Positioning Demo</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Leaflet Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f9f7f2; }
+        h1, h2, h3, .serif { font-family: 'Merriweather', serif; }
+        
+        /* Warm Map Styling */
+        .leaflet-container { background: #f0eadd; }
+        .map-tiles { filter: sepia(0.15) contrast(0.95) saturate(0.8); }
+
+        /* Marker Animations */
+        @keyframes pulse-dot {
+            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(234, 88, 12, 0); }
+            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
+        }
+        .marker-pin {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #ea580c;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .marker-pin:hover { transform: translate(-50%, -60%) scale(1.1); z-index: 999; }
+        .marker-pulse {
+            position: absolute;
+            width: 34px; height: 34px;
+            background: rgba(234, 88, 12, 0.4);
+            border-radius: 50%;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse-dot 2s infinite;
+            z-index: -1;
+        }
+
+        /* Scrollbar hiding */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- Mock Data ---
+        // Pre-populated memories showing the difference in precision
+        const INITIAL_MEMORIES = [
+            {
+                id: 1,
+                lat: 31.2304,
+                lng: 121.4737,
+                locationName: "Shanghai · Huangpu District", // China: District Level
+                country: "China",
+                precision: "high", // Internal flag for zoom logic
+                date: "2023-11-15",
+                note: "Walking down the Bund. The lights reflect beautifully on the river.",
+                images: ["https://images.unsplash.com/photo-1548919973-5cef591cdbc9?auto=format&fit=crop&w=400&q=80"]
+            },
+            {
+                id: 2,
+                lat: 48.8566,
+                lng: 2.3522,
+                locationName: "Paris, France", // Int'l: City Level
+                country: "France",
+                precision: "low",
+                date: "2023-10-12",
+                note: "A quiet afternoon at a cafe near the Louvre.",
+                images: ["https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=400&q=80"]
+            }
+        ];
+
+        // --- Simulation Pools ---
+        const MOCK_CHINA_LOCATIONS = [
+            { lat: 39.9042, lng: 116.4074, name: "Beijing · Dongcheng District" },
+            { lat: 22.5431, lng: 114.0579, name: "Shenzhen · Futian District" },
+            { lat: 30.2741, lng: 120.1551, name: "Hangzhou · Xihu District" },
+            { lat: 30.6586, lng: 104.0648, name: "Chengdu · Jinjiang District" }
+        ];
+
+        const MOCK_WORLD_LOCATIONS = [
+            { lat: 51.5074, lng: -0.1278, name: "London, UK" },
+            { lat: 40.7128, lng: -74.0060, name: "New York, USA" },
+            { lat: -33.8688, lng: 151.2093, name: "Sydney, Australia" },
+            { lat: 55.7558, lng: 37.6173, name: "Moscow, Russia" }
+        ];
+
+        // --- Icons ---
+        const Icons = {
+            MapPin: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-9 13-9 13s-9-7-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>,
+            X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
+            Globe: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>,
+            LocateFixed: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        };
+
+        // --- Sidebar Component ---
+        const Sidebar = ({ memory, onClose }) => {
+            if (!memory) return null;
+
+            return (
+                <div className="fixed top-0 right-0 h-full w-full md:w-[420px] bg-[#fdfbf7] shadow-2xl z-[1000] flex flex-col transition-transform duration-300 border-l border-stone-200">
+                    {/* Header Image */}
+                    <div className="relative h-60 w-full bg-gray-200">
+                        <img src={memory.images[0]} className="w-full h-full object-cover" alt="Cover" />
+                        <button onClick={onClose} className="absolute top-4 left-4 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg backdrop-blur-sm transition-all"><Icons.X /></button>
+                        
+                        {/* Precision Badge */}
+                        <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full flex items-center gap-2">
+                             {memory.precision === 'high' ? (
+                                <>
+                                    <span className="w-2 h-2 rounded-full bg-orange-400"></span>
+                                    <span>High Precision (District)</span>
+                                </>
+                             ) : (
+                                <>
+                                    <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                                    <span>Approx. Positioning (City)</span>
+                                </>
+                             )}
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-8 overflow-y-auto flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">Log Entry</span>
+                            <span className="text-gray-400 text-xs">{memory.date}</span>
+                        </div>
+                        
+                        <h2 className="text-2xl text-gray-800 font-bold mb-4 serif leading-tight">{memory.locationName}</h2>
+
+                        <div className="relative pl-5 border-l-2 border-orange-200 mb-8">
+                            <p className="text-gray-600 leading-relaxed serif italic">"{memory.note}"</p>
+                        </div>
+
+                        {/* Metadata Grid */}
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-stone-100">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Latitude</p>
+                                    <p className="text-sm font-mono text-gray-700">{memory.lat.toFixed(6)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Longitude</p>
+                                    <p className="text-sm font-mono text-gray-700">{memory.lng.toFixed(6)}</p>
+                                </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                                <span className="text-xs text-gray-500">Source: GPS/Beidou</span>
+                                <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded">Synced</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [memories, setMemories] = useState(INITIAL_MEMORIES);
+            const [selectedMemory, setSelectedMemory] = useState(null);
+            const [deviceStatus, setDeviceStatus] = useState("Connected");
+            const mapRef = useRef(null);
+            const mapInstanceRef = useRef(null);
+            const markersRef = useRef({});
+
+            // Initialize Map
+            useEffect(() => {
+                if (!mapRef.current) return;
+                
+                const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false }).setView([35, 105], 4);
+
+                // CartoDB Voyager Tiles (Clean, Paper-like)
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19,
+                    className: 'map-tiles'
+                }).addTo(map);
+
+                mapInstanceRef.current = map;
+                return () => map.remove();
+            }, []);
+
+            // Render Markers
+            useEffect(() => {
+                if (!mapInstanceRef.current) return;
+                const map = mapInstanceRef.current;
+
+                memories.forEach(mem => {
+                    if (!markersRef.current[mem.id]) {
+                        // Different marker color for visual debug (Optional)
+                        const borderColor = mem.precision === 'high' ? '#ea580c' : '#3b82f6';
+
+                        const icon = L.divIcon({
+                            className: 'custom-div-icon',
+                            html: `
+                                <div class="marker-pulse" style="background: ${mem.precision === 'high' ? 'rgba(234, 88, 12, 0.4)' : 'rgba(59, 130, 246, 0.4)'}"></div>
+                                <div class="marker-pin" style="border-color: ${borderColor}">
+                                    <img src="${mem.images[0]}" style="width:100%; height:100%; object-fit:cover;" />
+                                </div>
+                            `,
+                            iconSize: [34, 34],
+                            iconAnchor: [17, 17]
+                        });
+
+                        const marker = L.marker([mem.lat, mem.lng], { icon }).addTo(map);
+                        
+                        marker.on('click', () => {
+                            setSelectedMemory(mem);
+                            // --- PRECISION LOGIC FOR ZOOM ---
+                            // If High Precision (China), zoom deeper (13)
+                            // If Low Precision (Int'l), zoom wider (9)
+                            const targetZoom = mem.precision === 'high' ? 13 : 9;
+                            map.flyTo([mem.lat, mem.lng], targetZoom, { duration: 1.5 });
+                        });
+
+                        markersRef.current[mem.id] = marker;
+                    }
+                });
+            }, [memories]);
+
+            // --- Simulation Logic ---
+            const simulateCheckIn = (mode) => {
+                setDeviceStatus("Acquiring Signal...");
+                
+                setTimeout(() => {
+                    let locationData;
+                    
+                    if (mode === 'china') {
+                        // Pick random district-level mock
+                        const mock = MOCK_CHINA_LOCATIONS[Math.floor(Math.random() * MOCK_CHINA_LOCATIONS.length)];
+                        locationData = {
+                            ...mock,
+                            precision: 'high',
+                            // Add slight jitter to coords to simulate different spots in same district
+                            lat: mock.lat + (Math.random() - 0.5) * 0.01,
+                            lng: mock.lng + (Math.random() - 0.5) * 0.01,
+                            note: "Exploring the local streets. The district architecture is fascinating."
+                        };
+                    } else {
+                        // Pick random city-level mock
+                        const mock = MOCK_WORLD_LOCATIONS[Math.floor(Math.random() * MOCK_WORLD_LOCATIONS.length)];
+                        locationData = {
+                            ...mock,
+                            precision: 'low',
+                            lat: mock.lat + (Math.random() - 0.5) * 0.05,
+                            lng: mock.lng + (Math.random() - 0.5) * 0.05,
+                            note: "Arrived in the city center. The vibe here is electric."
+                        };
+                    }
+
+                    const newMemory = {
+                        id: Date.now(),
+                        lat: locationData.lat,
+                        lng: locationData.lng,
+                        locationName: locationData.name,
+                        precision: locationData.precision,
+                        date: new Date().toISOString().split('T')[0],
+                        note: locationData.note,
+                        images: ["https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=400&q=80"] // Generic travel image
+                    };
+
+                    setMemories(prev => [...prev, newMemory]);
+                    setDeviceStatus("Connected");
+                    
+                    // Auto-focus on new pin with appropriate zoom
+                    const map = mapInstanceRef.current;
+                    const zoomLevel = mode === 'china' ? 12 : 9; 
+                    map.flyTo([newMemory.lat, newMemory.lng], zoomLevel, { duration: 2 });
+
+                }, 1000);
+            };
+
+            return (
+                <div className="relative w-full h-screen overflow-hidden flex flex-col md:flex-row">
+                    
+                    {/* Map Area */}
+                    <div className="flex-1 relative h-full">
+                        <div ref={mapRef} className="w-full h-full z-0"></div>
+
+                        {/* Top Branding */}
+                        <div className="absolute top-6 left-6 z-[500] pointer-events-none">
+                            <div className="bg-white/90 backdrop-blur p-4 rounded-xl shadow-lg border border-stone-200 pointer-events-auto">
+                                <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2 serif">
+                                    <span className="text-orange-600"><Icons.MapPin /></span>
+                                    Travel<span className="text-gray-900">Log</span>
+                                </h1>
+                                <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">Memory Management System</p>
+                            </div>
+                        </div>
+
+                        {/* Simulation Controls (Bottom Center) */}
+                        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 z-[500] w-[90%] md:w-auto">
+                            <div className="bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-2xl border border-stone-200 flex flex-col md:flex-row items-center gap-4 pr-6">
+                                
+                                {/* Status Indicator */}
+                                <div className="hidden md:flex flex-col items-center px-4 border-r border-gray-100 min-w-[120px]">
+                                    <div className={`w-2 h-2 rounded-full mb-1 ${deviceStatus === 'Connected' ? 'bg-green-500 animate-pulse' : 'bg-yellow-400'}`}></div>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase">{deviceStatus}</span>
+                                </div>
+
+                                {/* Simulation Buttons */}
+                                <div className="flex gap-2 w-full md:w-auto">
+                                    <button 
+                                        onClick={() => simulateCheckIn('china')}
+                                        className="flex-1 md:flex-none flex items-center gap-2 bg-orange-50 hover:bg-orange-100 text-orange-700 px-4 py-3 rounded-xl transition-colors text-xs font-bold border border-orange-200"
+                                    >
+                                        <Icons.LocateFixed />
+                                        <span>Domestic (District)</span>
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={() => simulateCheckIn('world')}
+                                        className="flex-1 md:flex-none flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-3 rounded-xl transition-colors text-xs font-bold border border-blue-200"
+                                    >
+                                        <Icons.Globe />
+                                        <span>Int'l (City)</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <p className="text-center text-[10px] text-gray-500 mt-3 bg-white/50 inline-block px-2 rounded mx-auto w-full">
+                                Simulates GPS/Beidou module data resolution logic
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Sidebar Container */}
+                    <Sidebar memory={selectedMemory} onClose={() => setSelectedMemory(null)} />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
