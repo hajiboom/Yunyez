@@ -9,7 +9,7 @@ import (
 	"time"
 	config "yunyez/internal/common/config"
 
-	logger "yunyez/pkg/logger"
+	logger "yunyez/internal/pkg/logger"
 	gorm_logger "gorm.io/gorm/logger"
 
 	"gorm.io/driver/postgres"

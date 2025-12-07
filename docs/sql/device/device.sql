@@ -7,10 +7,10 @@ DROP TYPE IF EXISTS working_status_enum;
 
 -- 设备全局状态枚举
 CREATE TYPE device_global_status AS ENUM (
-    'inactivated',  -- 未激活（对应原 0）
-    'activated',    -- 已激活（对应原 1）
-    'disabled',     -- 禁用（对应原 2）
-    'scrapped'      -- 报废（对应原 3）
+    'inactivated',  -- 未激活（对应原 1）
+    'activated',    -- 已激活（对应原 2）
+    'disabled',     -- 禁用（对应原 3）
+    'scrapped'      -- 报废（对应原 4）
 );
 
 -- 网络类型枚举
@@ -23,8 +23,8 @@ CREATE TYPE network_type_enum AS ENUM (
 
 -- 网络连接状态枚举
 CREATE TYPE connect_status_enum AS ENUM (
-    'disconnected', -- 断开（对应原 0）
-    'connecting',   -- 连接中（对应原 1）
+    'disconnected', -- 断开（对应原 1）
+    -- 'connecting',   -- 连接中（对应原 0）
     'connected'     -- 已连接（对应原 2)
 );
 

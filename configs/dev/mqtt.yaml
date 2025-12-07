@@ -1,9 +1,8 @@
 mqtt:
-  address: "127.0.0.1:1883"
+  address: "tcp://127.0.0.1:1883"
   client:
-    id: "client-001"
-    username: "emqxpp"
-    password: "emqxpp"
+    username: "root"
+    password: "root123"
 
 
 rules:

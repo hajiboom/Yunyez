@@ -20,7 +20,7 @@
 
 ## 4. 技术栈
 - **语言**：Go（高并发、内存可控）
-- **通信**：MQTT（EMQX）、WebSocket
+- **通信**：MQTT（EMQX）、WebSocket、UDP（图像传输）
 - **存储**：PostgreSQL（设备元数据）、Redis（会话/缓存）、MongoDB（日志/非结构化）
 - **消息队列**：Kafka（高吞吐） / RabbitMQ（简单场景）
 - **AI**：阿里通义千问（Qwen）API（初期）

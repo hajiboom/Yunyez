@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"yunyez/pkg/logger"
+	"yunyez/internal/pkg/logger"
 	"yunyez/internal/common/tools"
 	"yunyez/internal/model/device"
-	"yunyez/pkg/postgre"
+	"yunyez/internal/pkg/postgre"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -77,7 +77,7 @@ func (suite *DeviceServiceTestSuite) SetupSuite() {
 	}
 
 	// 创建服务实例
-	dbProvider := &postgreClient{client: client}
+	dbProvider := &PostgreClient{Client: client}
 	suite.service = NewService(dbProvider)
 	
 	logger.Info(suite.ctx, "设备服务测试套件设置完成", map[string]interface{}{
@@ -462,7 +462,7 @@ func BenchmarkGetDeviceByID(b *testing.B) {
 
 	// 初始化服务
 	client := postgre.GetClient()
-	dbProvider := &postgreClient{client: client}
+	dbProvider := &PostgreClient{Client: client}
 	service := NewService(dbProvider)
 	
 	// 创建测试设备用于基准测试
@@ -513,7 +513,7 @@ func BenchmarkUpdateDevice(b *testing.B) {
 	
 	// 初始化服务
 	client := postgre.GetClient()
-	dbProvider := &postgreClient{client: client}
+	dbProvider := &PostgreClient{Client: client}
 	service := NewService(dbProvider)
 	
 	// 创建测试设备用于基准测试
