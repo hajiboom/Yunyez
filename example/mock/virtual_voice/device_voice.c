@@ -7,8 +7,8 @@
 
 #define ADDRESS     "tcp://127.0.0.1:1883"
 #define CLIENTID    "bridge_mqtt_source_1"
-#define USERNAME    "emqxpp"
-#define PASSWORD    "emqxpp"
+#define USERNAME    "root"
+#define PASSWORD    "root123"
 #define TOPIC       "test/T0001/A0001/voice/server"
 
 // Simple CRC16-CCITT (0x1021 polynomial, initial 0xFFFF)
@@ -27,6 +27,7 @@ uint16_t crc16_ccitt(const uint8_t *data, size_t len) {
     return crc;
 }
 
+// gcc -o device_voice device_voice.c -lpaho-mqtt3c
 int main(int argc, char* argv[]) {
     MQTTClient client;
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;

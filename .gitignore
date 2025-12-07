@@ -1,2 +1,5 @@
 .vscode/*
 storage/*
+
+# 前端依赖
+fronted/admin/yunyez-admin/node_modules/*

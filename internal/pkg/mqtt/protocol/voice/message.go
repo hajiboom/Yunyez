@@ -3,7 +3,7 @@ package voice
 import (
 	"time"
 
-	mqtt_constant "yunyez/pkg/mqtt/constant"
+	mqtt_constant "yunyez/internal/pkg/mqtt/constant"
 	"github.com/sigurn/crc16"
 )
 

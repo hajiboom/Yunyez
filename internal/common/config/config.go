@@ -33,10 +33,11 @@ var (
 	once      sync.Once
 
 	commonConfigFiles = []string{
-		"device.yaml",
+		"device.yaml", // 设备配置文件
 	}
 	envConfigFiles = []string{
-		"database.yaml",
+		"database.yaml", // 数据库配置文件
+		"mqtt.yaml",     // MQTT 配置文件u
 	}
 )
 
@@ -144,7 +145,7 @@ func getViper() *viper.Viper {
 	if v == nil || v.(*viper.Viper) == nil {
 		log.Fatalf("viper instance is nil")
 	}
-	
+
 	return v.(*viper.Viper)
 }
 
@@ -167,7 +168,7 @@ func GetStringWithDefault(key string, defaultValue string) string {
 // GetInt 获取整数配置值
 func GetInt(key string) int {
 	return getViper().GetInt(key)
-} 
+}
 
 // GetIntWithDefault 获取整数配置值，若为空则返回默认值
 func GetIntWithDefault(key string, defaultValue int) int {

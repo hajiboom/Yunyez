@@ -9,8 +9,19 @@ import (
 	"gorm.io/gorm"
 
 	"yunyez/internal/model/device"
-	"yunyez/pkg/postgre"
+	"yunyez/internal/pkg/postgre"
 )
+
+
+var (
+	once            sync.Once
+	ServiceInstance *service
+)
+
+func init() {
+	// Initialize the service instance with a default DBProvider.
+	ServiceInstance = &service{provider: &PostgreClient{Client: postgre.GetClient()}}
+}
 
 // Service defines the device business logic interface.
 type Service interface {
@@ -32,29 +43,26 @@ type DBProvider interface {
 	DB() *gorm.DB
 }
 
-// postgreClient implements DBProvider using PostgreSQL.
-type postgreClient struct {
-	client *postgre.Client
+// PostgreClient implements DBProvider using PostgreSQL.
+type PostgreClient struct {
+	Client *postgre.Client
 }
 
-func (p *postgreClient) DB() *gorm.DB {
-	return p.client.DB
+func (p *PostgreClient) DB() *gorm.DB {
+	return p.Client.DB
 }
 
-var (
-	once            sync.Once
-	serviceInstance *service
-)
 
 // NewService returns a singleton instance of the device service.
 // It supports dependency injection via DBProvider for testability.
 func NewService(dbProvider DBProvider) Service {
 	once.Do(func() {
-		serviceInstance = &service{provider: dbProvider}
+		ServiceInstance = &service{provider: dbProvider}
 	})
-	return serviceInstance
+	return ServiceInstance
 }
 
+// service implements the Service interface.
 type service struct {
 	provider DBProvider
 }
@@ -147,6 +155,9 @@ func (s *service) ListDevices(ctx context.Context, page, pageSize int, filters m
 
 	db := s.provider.DB().WithContext(ctx).Model(&device.BaseDevice{})
 	for key, value := range filters {
+		if value == nil {
+			continue
+		}
 		// ⚠️ In production, validate `key` against an allow-list of columns
 		db = db.Where(key+" = ?", value)
 	}

@@ -7,15 +7,15 @@ import (
 	"regexp"
 	"strings"
 	"yunyez/internal/common/constant"
-	"yunyez/pkg/logger"
+	"yunyez/internal/pkg/logger"
 
-	_ "github.com/eclipse/paho.mqtt.golang"
+	paho "github.com/eclipse/paho.mqtt.golang"
 )
 
 const(
+	QoS = 0 // 默认 QoS 等级
 	MQTT_TOPIC_LEVEL = 5 // mqtt topic 层级
 	DEVICE_SN_REGEX = "^[a-zA-Z0-9_]+$" // 设备序列号格式
-
 )
 
 var (
@@ -118,4 +118,44 @@ func validateDeviceSN(deviceSN string) bool {
 		return false
 	}
 	return true
+}
+
+// SubscribeTopic 订阅 MQTT 主题
+// 分批订阅主题，每次最多订阅100个
+// 参数：
+//   - client: MQTT 客户端实例
+//   - topics: 主题列表
+// 返回值:
+//   - error: 错误信息
+func SubscribeTopic(client paho.Client, topics []string) error {
+	ctx := context.Background()
+	const batch = 100
+	if client == nil {
+		return fmt.Errorf("client is nil")
+	}
+	if len(topics) == 0 {
+		return fmt.Errorf("topics is empty")
+	}
+	for i := 0; i < len(topics); i += batch {
+		end := i + batch
+		if end > len(topics) {
+			end = len(topics)
+		}
+		topicBatch := topics[i:end]
+		topicMap := make(map[string]byte)
+		for _, topic := range topicBatch {
+			topicMap[topic] = byte(QoS)
+		}
+		if token := client.SubscribeMultiple(topicMap, nil); token.Wait() && token.Error() != nil {
+			logger.Error(ctx, "mqtt.subscribe error", map[string]interface{}{
+				"topics": topicBatch,
+				"error": token.Error(),
+			})	
+			return token.Error()
+		}
+		logger.Info(ctx, "mqtt.subscribe success", map[string]interface{}{
+			"topics": topicBatch,
+		})
+	}
+	return nil
 }

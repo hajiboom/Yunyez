@@ -6,32 +6,3 @@ device:
   type: "sensor"
   # 设备名称
   name: "Temperature Sensor"
-
-
-# mqtt 配置
-mqtt:
- address: "127.0.0.1:1883"
- client:
-   id: "client-001"
-   username: "emqxpp"
-   password: "emqxpp"
-
-rules:
-  # MQTT 到 HTTP 的转发规则
-  - rule_id: "device_location_upload"
-    rule_name: "设备位置上报"
-    enable: true
-    source:
-      protocol: "mqtt"
-      config:
-        broker_addr: "tcp://127.0.0.1:1883"
-        client_id: "bridge_mqtt_source_1"
-        subscribe_topic: "/device/+/location/server"
-        qos: 0
-    target:
-      protocol: "http"
-      config:
-        method: "POST"
-        url: "http://127.0.0.1:8080/api/device/location"
-        headers:
-          Content-Type: "application/json"

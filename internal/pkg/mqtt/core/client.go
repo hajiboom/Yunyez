@@ -6,8 +6,8 @@ import (
 	"context"
 	"errors"
 	"time"
-	logger "yunyez/pkg/logger"
-	"yunyez/pkg/mqtt/protocol/voice"
+	logger "yunyez/internal/pkg/logger"
+	"yunyez/internal/pkg/mqtt/protocol/voice"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
 )

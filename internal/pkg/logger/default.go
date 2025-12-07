@@ -92,7 +92,10 @@ func New() *Logger {
 		cores = append(cores, consoleCore)
 	}
 	// 创建日志记录器
-	logger := zap.New(zapcore.NewTee(cores...), zap.AddCaller(), zap.Development())
+	logger := zap.New(zapcore.NewTee(cores...),
+					zap.AddCaller(), 
+					zap.AddCallerSkip(2), // 跳过调用者栈帧，避免记录 logger 包的封装
+					zap.Development())
 
 	return &Logger{
 		zapLogger: logger,
