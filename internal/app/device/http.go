@@ -22,11 +22,10 @@ func HTTPStart() {
 	// 设备路由
 	deviceGroup := r.Group("/device")
 	{
-		deviceGroup.POST("/add", device_manage.AddDevice)                // 添加设备
-		deviceGroup.GET("/fetch", device_manage.FetchDeviceList)         // 获取设备列表
-		deviceGroup.DELETE("/delete/:sn", device_manage.DeleteDevice)   // 删除设备
+		deviceGroup.GET("/fetch", device_manage.FetchDeviceList)       // 获取设备列表
+		deviceGroup.DELETE("/delete/:sn", device_manage.DeleteDevice)  // 删除设备
 		deviceGroup.GET("/fetch/:sn", device_manage.FetchDeviceDetail) // 获取设备详情
-		deviceGroup.PUT("/update/:sn", device_manage.UpdateDeviceInfo) // 更新设备
+		deviceGroup.PUT("/update", device_manage.UpdateDeviceInfo)     // 更新设备
 	}
 
 	// 获取 HTTP 端口号
