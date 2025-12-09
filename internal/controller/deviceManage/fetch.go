@@ -50,7 +50,11 @@ func FetchDeviceList(c *gin.Context) {
 			"error": err.Error(),
 			"req": req,
 		})
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"Code": http.StatusInternalServerError,
+			"Message": "Failed to list devices",
+			"Data": nil,
+		})
 		return
 	}
 
@@ -92,8 +96,8 @@ func FetchDeviceDetail(c *gin.Context) {
 		})
 		return
 	}
-	// 调用服务层获取设备详情
-	deviceInfo, err := deviceService.ServiceInstance.GetDeviceBySN(c, sn)
+	// 设备基本信息
+	deviceBaseInfo, err := deviceService.ServiceInstance.GetDeviceBySN(c, sn)
 	if err != nil {
 		logger.Error(c.Request.Context(), "Failed to get device by SN", map[string]any{
 			"error": err.Error(),
@@ -102,6 +106,22 @@ func FetchDeviceDetail(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// 设备网络信息
+	networkInfo, err := deviceService.ServiceInstance.GetDeviceNetworkBySN(c, sn)
+	if err != nil {
+		logger.Error(c.Request.Context(), "Failed to get device network info", map[string]any{
+			"error": err.Error(),
+			"sn": sn,
+		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	deviceInfo := &deviceType.DeviceDetail{
+		DeviceBaseInfo: deviceBaseInfo,
+		DeviceNetworkInfo: networkInfo,
+	}
+	
 	// 返回设备详情
 	c.JSON(http.StatusOK, gin.H{
 		"Code": http.StatusOK,

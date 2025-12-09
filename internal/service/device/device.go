@@ -3,15 +3,17 @@ package device
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	"gorm.io/gorm"
 
+	"yunyez/internal/common/constant"
 	"yunyez/internal/model/device"
 	"yunyez/internal/pkg/postgre"
+	deviceType "yunyez/internal/types/device"
 )
-
 
 var (
 	once            sync.Once
@@ -26,15 +28,17 @@ func init() {
 // Service defines the device business logic interface.
 type Service interface {
 	RegisterDevice(ctx context.Context, baseDevice *device.BaseDevice) error
-	GetDeviceByID(ctx context.Context, id int64) (*device.BaseDevice, error)
-	GetDeviceBySN(ctx context.Context, sn string) (*device.BaseDevice, error)
-	UpdateDevice(ctx context.Context, id int64, updates map[string]interface{}) error
-	DeleteDevice(ctx context.Context, id int64) error
-	ListDevices(ctx context.Context, page, pageSize int, filters map[string]interface{}) ([]*device.BaseDevice, int64, error)
-	UpdateDeviceNetwork(ctx context.Context, deviceID int64, updates map[string]interface{}) error
-	GetDeviceNetwork(ctx context.Context, deviceID int64) (*device.DeviceNetwork, error)
-	UpdateDeviceStatus(ctx context.Context, deviceID int64, updates map[string]interface{}) error
-	GetDeviceStatus(ctx context.Context, deviceID int64) (*device.DeviceStatus, error)
+	// 查询设备是否存在
+	CheckDeviceExist(ctx context.Context, sn string) (bool, error)
+	// 根据序列号查询设备基础信息
+	GetDeviceBySN(ctx context.Context, sn string) (*deviceType.DeviceBaseInfo, error)
+	UpdateDevice(ctx context.Context, sn string, updates map[string]interface{}) error
+	DeleteDevice(ctx context.Context, sn string) error
+	// 查询设备列表
+	ListDevices(ctx context.Context, page, pageSize int, filters map[string]interface{}) ([]*deviceType.DeviceListItem, int64, error)
+	UpdateDeviceNetwork(ctx context.Context, deviceSN string, updates map[string]interface{}) error
+	// 根据序列号查询设备网络信息
+	GetDeviceNetworkBySN(ctx context.Context, deviceSN string) (*deviceType.DeviceNetworkInfo, error)
 	ActivateDevice(ctx context.Context, deviceID int64, activationTime time.Time) error
 }
 
@@ -51,7 +55,6 @@ type PostgreClient struct {
 func (p *PostgreClient) DB() *gorm.DB {
 	return p.Client.DB
 }
-
 
 // NewService returns a singleton instance of the device service.
 // It supports dependency injection via DBProvider for testability.
@@ -75,49 +78,86 @@ func (s *service) RegisterDevice(ctx context.Context, baseDevice *device.BaseDev
 	return s.provider.DB().WithContext(ctx).Create(baseDevice).Error
 }
 
-// GetDeviceByID retrieves a device by its ID.
-func (s *service) GetDeviceByID(ctx context.Context, id int64) (*device.BaseDevice, error) {
-	if id <= 0 {
-		return nil, errors.New("invalid device ID")
+// CheckDeviceExist 根据序列号查询设备是否存在
+// 参数：
+//   - ctx context.Context 上下文
+//   - sn string 设备序列号
+//
+// 返回：
+//   - bool 设备是否存在
+//   - error 查询失败时返回错误
+func (s *service) CheckDeviceExist(ctx context.Context, sn string) (bool, error) {
+	if sn == "" {
+		return false, errors.New("empty serial number")
 	}
-	var baseDevice device.BaseDevice
-	err := s.provider.DB().WithContext(ctx).First(&baseDevice, id).Error
+	var count int64
+	err := s.provider.DB().WithContext(ctx).Model(&device.BaseDevice{}).
+		Where(&device.BaseDevice{SN: sn}).
+		Count(&count).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, err
+		return false, err
 	}
-	return &baseDevice, nil
+	return count > 0, nil
 }
 
-// GetDeviceBySN retrieves a device by its serial number (DeviceSN).
-func (s *service) GetDeviceBySN(ctx context.Context, sn string) (*device.BaseDevice, error) {
+// GetDeviceBySN 根据序列号查询设备基础信息
+// 参数：
+//   - ctx context.Context 上下文
+//   - sn string 设备序列号
+//
+// 返回：
+//   - *deviceType.DeviceBaseInfo 设备基础信息
+//   - error 查询失败时返回错误
+func (s *service) GetDeviceBySN(ctx context.Context, sn string) (*deviceType.DeviceBaseInfo, error) {
 	if sn == "" {
 		return nil, errors.New("empty serial number")
 	}
+	// 设备基础信息
 	var baseDevice device.BaseDevice
 	// Use explicit column name that matches GORM tag: `gorm:"column:device_sn"`
-	err := s.provider.DB().WithContext(ctx).Where(&device.BaseDevice{DeviceSN: sn}).First(&baseDevice).Error
-	
+	err := s.provider.DB().WithContext(ctx).Where(&device.BaseDevice{SN: sn}).First(&baseDevice).Error
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
+			return nil, fmt.Errorf("device_base not found by device_sn: %s", sn)
 		}
 		return nil, err
 	}
-	return &baseDevice, nil
+
+	baseInfo := &deviceType.DeviceBaseInfo{
+		SN:              baseDevice.SN,
+		IMEI:            baseDevice.IMEI,
+		ICCID:           baseDevice.ICCID,
+		DeviceType:      baseDevice.DeviceType,
+		VendorName:      baseDevice.VendorName,
+		HardwareVersion: baseDevice.HardwareVersion,
+		FirmwareVersion: baseDevice.FirmwareVersion,
+		ProductModel:    baseDevice.ProductModel,
+		ManufactureDate: baseDevice.ManufactureDate,
+		ExpireDate:      deviceType.SafeTimePointer(baseDevice.ExpireDate), // 指针类型，可能为 nil
+		Status:          baseDevice.Status,
+		ActivationTime:  deviceType.SafeTimePointer(baseDevice.ActivationTime), // 指针类型，可能为 nil
+		Remark:          baseDevice.Remark,
+	}
+	return baseInfo, nil
 }
 
-// UpdateDevice performs partial update on a device by ID.
-func (s *service) UpdateDevice(ctx context.Context, id int64, updates map[string]interface{}) error {
-	if id <= 0 {
-		return errors.New("invalid device ID")
+// UpdateDevice 更新设备基础信息
+// 参数：
+//   - ctx context.Context 上下文
+//   - sn string 设备序列号
+//   - updates map[string]interface{} 更新字段
+//
+// 返回：
+//   - error 更新失败时返回错误
+func (s *service) UpdateDevice(ctx context.Context, sn string, updates map[string]interface{}) error {
+	if sn == "" {
+		return fmt.Errorf("[%d]empty serial number", constant.ErrInvalidParam)
 	}
 	if len(updates) == 0 {
-		return nil // nothing to update
+		return fmt.Errorf("[%d]no fields to update", constant.ErrInvalidParam)
 	}
-	result := s.provider.DB().WithContext(ctx).Model(&device.BaseDevice{}).Where(&device.BaseDevice{ID: id}).Updates(updates)
+	result := s.provider.DB().WithContext(ctx).Model(&device.BaseDevice{}).Where(&device.BaseDevice{SN: sn}).Updates(updates)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -127,25 +167,44 @@ func (s *service) UpdateDevice(ctx context.Context, id int64, updates map[string
 	return nil
 }
 
-// DeleteDevice soft-deletes a device by ID.
-func (s *service) DeleteDevice(ctx context.Context, id int64) error {
-	if id <= 0 {
-		return errors.New("invalid device ID")
+// DeleteDevice 删除设备（软删除）
+// 参数：
+//   - ctx context.Context 上下文
+//   - sn string 设备序列号
+//
+// 返回：
+//   - error 删除失败时返回错误
+func (s *service) DeleteDevice(ctx context.Context, sn string) error {
+	if sn == "" {
+		return errors.New("empty serial number")
 	}
-	result := s.provider.DB().WithContext(ctx).Delete(&device.BaseDevice{}, id)
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
-	}
-	return nil
+	db := s.provider.DB().WithContext(ctx)
+
+	err := db.Transaction(func(tx *gorm.DB) error {
+		// 删除设备基本信息
+		record := tx.Where(&device.BaseDevice{SN: sn}).Delete(&device.BaseDevice{})
+		if record.Error != nil {
+			return record.Error
+		}
+		if record.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+
+		// 删除设备网络信息（网络信息可能不存在）
+		if err := tx.Where(&device.DeviceNetwork{SN: sn}).Delete(&device.DeviceNetwork{}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
 }
 
 // ListDevices returns a paginated list of devices with optional filters.
 // Note: keys in `filters` must be safe column names (e.g., "status", "device_sn").
 // For production, consider allow-list validation to prevent injection.
-func (s *service) ListDevices(ctx context.Context, page, pageSize int, filters map[string]interface{}) ([]*device.BaseDevice, int64, error) {
+func (s *service) ListDevices(ctx context.Context, page, pageSize int, filters map[string]interface{}) ([]*deviceType.DeviceListItem, int64, error) {
 	if page <= 0 {
 		page = 1
 	}
@@ -173,18 +232,30 @@ func (s *service) ListDevices(ctx context.Context, page, pageSize int, filters m
 		return nil, 0, err
 	}
 
-	return devices, total, nil
+	deviceListItems := make([]*deviceType.DeviceListItem, 0, len(devices))
+	for _, dev := range devices {
+		deviceListItems = append(deviceListItems, &deviceType.DeviceListItem{
+			ID:           dev.ID,
+			SN:           dev.SN,
+			VendorName:   dev.VendorName,
+			Status:       dev.Status,
+			CreateTime:   dev.CreateTime,
+			ProductModel: dev.ProductModel,
+		})
+	}
+
+	return deviceListItems, total, nil
 }
 
 // UpdateDeviceNetwork updates network info for a device.
-func (s *service) UpdateDeviceNetwork(ctx context.Context, deviceID int64, updates map[string]interface{}) error {
-	if deviceID <= 0 {
-		return errors.New("invalid device ID")
+func (s *service) UpdateDeviceNetwork(ctx context.Context, deviceSN string, updates map[string]interface{}) error {
+	if deviceSN == "" {
+		return errors.New("empty device serial number")
 	}
 	if len(updates) == 0 {
 		return nil
 	}
-	result := s.provider.DB().WithContext(ctx).Model(&device.DeviceNetwork{}).Where(&device.DeviceNetwork{DeviceID: deviceID}).Updates(updates)
+	result := s.provider.DB().WithContext(ctx).Model(&device.DeviceNetwork{}).Where(&device.DeviceNetwork{SN: deviceSN}).Updates(updates)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -194,62 +265,39 @@ func (s *service) UpdateDeviceNetwork(ctx context.Context, deviceID int64, updat
 	return nil
 }
 
-// GetDeviceNetwork retrieves network info by device ID.
-func (s *service) GetDeviceNetwork(ctx context.Context, deviceID int64) (*device.DeviceNetwork, error) {
-	if deviceID <= 0 {
-		return nil, errors.New("invalid device ID")
+// GetDeviceNetworkBySN 根据序列号查询设备网络信息
+// 参数：
+//   - ctx context.Context 上下文
+//   - deviceSN string 设备序列号
+//
+// 返回：
+//   - *deviceType.DeviceNetworkInfo 设备网络信息
+//   - error 查询失败时返回错误
+func (s *service) GetDeviceNetworkBySN(ctx context.Context, deviceSN string) (*deviceType.DeviceNetworkInfo, error) {
+	if deviceSN == "" {
+		return nil, errors.New("empty device serial number")
 	}
-	var net device.DeviceNetwork
-	err := s.provider.DB().WithContext(ctx).Where("device_id = ?", deviceID).First(&net).Error
+	var deviceNetwork device.DeviceNetwork
+	err := s.provider.DB().WithContext(ctx).Where("device_sn = ?", deviceSN).First(&deviceNetwork).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
 		}
 		return nil, err
 	}
-	return &net, nil
-}
 
-// UpdateDeviceStatus updates device status fields.
-func (s *service) UpdateDeviceStatus(ctx context.Context, deviceID int64, updates map[string]interface{}) error {
-	if deviceID <= 0 {
-		return errors.New("invalid device ID")
-	}
-	if len(updates) == 0 {
-		return nil
+	networkInfo := &deviceType.DeviceNetworkInfo{
+		NetworkType:        deviceNetwork.NetworkType,
+		MacAddress:         deviceNetwork.MacAddress,
+		IPAddress:          deviceNetwork.IPAddress,
+		Port:               deviceNetwork.Port,
+		SignalStrength:     deviceNetwork.SignalStrength,
+		ConnectStatus:      deviceNetwork.ConnectStatus,
+		LastConnectTime:    deviceType.SafeTimePointer(deviceNetwork.LastConnectTime),    // 指针类型，可能为 nil
+		LastDisconnectTime: deviceType.SafeTimePointer(deviceNetwork.LastDisconnectTime), // 指针类型，可能为 nil
 	}
 
-	// Prevent updating protected fields
-	protected := []string{"ID", "DeviceID", "CreateTime"}
-	for _, field := range protected {
-		delete(updates, field)
-	}
-	updates["update_time"] = time.Now()
-
-	result := s.provider.DB().WithContext(ctx).Model(&device.DeviceStatus{}).Where(&device.DeviceStatus{DeviceID: deviceID}).Updates(updates)
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
-	}
-	return nil
-}
-
-// GetDeviceStatus retrieves status info by device ID.
-func (s *service) GetDeviceStatus(ctx context.Context, deviceID int64) (*device.DeviceStatus, error) {
-	if deviceID <= 0 {
-		return nil, errors.New("invalid device ID")
-	}
-	var status device.DeviceStatus
-	err := s.provider.DB().WithContext(ctx).Where(&device.DeviceStatus{DeviceID: deviceID}).First(&status).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, err
-	}
-	return &status, nil
+	return networkInfo, nil
 }
 
 // ActivateDevice sets the device to activated state.

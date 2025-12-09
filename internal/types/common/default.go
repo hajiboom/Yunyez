@@ -6,6 +6,6 @@ package common
 
 // 分页参数
 type Page struct {
-	PageNum int `json:"PageNum" min:"1" max:"100" default:"1"`
-	PageSize int `json:"PageSize" min:"1" max:"100" default:"10"`
+	PageNum int `json:"pageNum" min:"1" max:"100" default:"1"`
+	PageSize int `json:"pageSize" min:"1" max:"100" default:"10"`
 }
