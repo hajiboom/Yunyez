@@ -1,4 +1,4 @@
-package constant
+package common
 
 const (
 	VOICE_VERSION        = 0x01 // 版本号 1.0

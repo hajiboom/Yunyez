@@ -29,21 +29,3 @@ func StartConnect() error {
 
 
 
-
-// ========================= MQTT桥接转发 ======================================
-// 桥接器转发topic消息到指定接口
-// 该中间件还在开发中，目前只支持转发到HTTP接口，后续会支持其他协议类型，欢迎参与开发
-// link：https://github.com/hajiboom/mqtt-bridge
-
-
-
-// StartBridge 启动MQTT桥接转发
-func StartBridge() error {
-	// 初始化mqtt桥接器
-	// 添加中间件链处理 【TODO】
-	// 订阅需要桥接的topic 会根据配置自动转发消息
-	// 保持主程序运行
-	select {}
-}
-
-

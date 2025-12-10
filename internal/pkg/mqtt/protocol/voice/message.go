@@ -3,7 +3,7 @@ package voice
 import (
 	"time"
 
-	mqtt_constant "yunyez/internal/pkg/mqtt/constant"
+	mqtt_common "yunyez/internal/pkg/mqtt/common"
 	"github.com/sigurn/crc16"
 )
 
@@ -29,7 +29,7 @@ type Message struct {
 //   - []byte: 包含协议头的音频消息 payload
 func BuildPayload(seq uint16, data []byte, frameType uint8, config Message) []byte {
 	header := &Header{
-		Version:    mqtt_constant.VOICE_VERSION,
+		Version:    mqtt_common.VOICE_VERSION,
 		AudioFormat:  config.AudioFormat,
 		SampleRate: config.AudioSampleRate,
 		Ch:         config.AudioChannel,
@@ -62,7 +62,7 @@ func BuildPayload(seq uint16, data []byte, frameType uint8, config Message) []by
 // 返回值:
 //   - []byte: 包含协议头的完整音频消息 payload
 func BuildFullPayload(seq uint16, data []byte, config Message) []byte {
-	return BuildPayload(seq, data, mqtt_constant.VOICE_FRAME_FULL, config)
+	return BuildPayload(seq, data, mqtt_common.VOICE_FRAME_FULL, config)
 }
 
 // BuildStreamPayload 构建流式音频消息 payload（包含协议头）
@@ -74,9 +74,9 @@ func BuildFullPayload(seq uint16, data []byte, config Message) []byte {
 // 返回值:
 //   - []byte: 包含协议头的流式音频消息 payload
 func BuildStreamPayload(seq uint16, data []byte, config Message, isLast bool) []byte {
-	frameType := mqtt_constant.VOICE_FRAME_FRAGMENT
+	frameType := mqtt_common.VOICE_FRAME_FRAGMENT
 	if isLast {
-		frameType = mqtt_constant.VOICE_FRAME_LAST
+		frameType = mqtt_common.VOICE_FRAME_LAST
 	}
 	return BuildPayload(seq, data, uint8(frameType), config)
 }

@@ -37,7 +37,8 @@ var (
 	}
 	envConfigFiles = []string{
 		"database.yaml", // 数据库配置文件
-		"mqtt.yaml",     // MQTT 配置文件u
+		"mqtt.yaml",     // MQTT 配置文件
+		"default.yaml",  // 通用配置文件
 	}
 )
 
@@ -147,6 +148,10 @@ func getViper() *viper.Viper {
 	}
 
 	return v.(*viper.Viper)
+}
+
+func GetViperInstance() *viper.Viper {
+	return getViper()
 }
 
 // ======= 配置文件相关函数 =======
