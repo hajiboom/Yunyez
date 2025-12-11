@@ -3,3 +3,6 @@ storage/*
 
 # 前端依赖
 fronted/admin/yunyez-admin/node_modules/*
+
+# 大文件
+./ai/nlu/model/*
