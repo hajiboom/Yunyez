@@ -17,3 +17,4 @@ ai/asr/data/
 __pycache__/
 *.pyc
 *.pyo
+

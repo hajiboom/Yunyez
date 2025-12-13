@@ -43,3 +43,15 @@ func GetVendor() map[string]string {
 		Vendor_Test:   "测试",
 	}
 }
+
+// intent 意图
+// 【目前只是测试阶段，后续会根据实际场景进行调整】
+// 可能会放弃意图分类采用无监督学习
+const (
+	Intent_PlayMusic = "play_music" // 播放音乐
+	Intent_SetTemperature = "set_temperature" // 设置温度
+	Intent_TurnOnLight = "turn_on_light" // 开灯
+	Intent_TurnOffLight = "turn_off_light" // 关灯
+	Intent_ChitChat = "chit_chat" // 闲聊
+	Intent_DenyAction = "deny_action" // 取消执行
+)
