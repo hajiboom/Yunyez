@@ -3,10 +3,9 @@ package device
 // device请求参数
 
 import (
+	"time"
 	"yunyez/internal/common/constant"
 	types "yunyez/internal/types/common"
-
-	deviceModel "yunyez/internal/model/device"
 )
 
 // GetDeviceStatus 获取设备状态
@@ -31,15 +30,34 @@ func GetDeviceStatus(status int) string {
 	}
 }
 
+// DeviceListRequest 获取设备列表请求参数
 type DeviceListRequest struct {
 	Page types.Page `json:",inline"`
-	VendorName string `json:"VendorName,omitempty" default:""`
-	DeviceType string `json:"DeviceType,omitempty" default:""`
-	Status int `json:"Status,omitempty" oneof:"-1 1 2" default:"-1"`
+	VendorName string `json:"vendorName,omitempty" default:""`
+	DeviceType string `json:"deviceType,omitempty" default:""`
+	Status int `json:"status,omitempty" oneof:"-1 1 2 3 4" default:"-1"`
 }
 
+// DeviceListResponse 获取设备列表响应参数
 type DeviceListResponse struct {
-	Page types.Page `json:",inline"`
-	Total int `json:"Total"`
-	Devices []*deviceModel.BaseDevice `json:"Devices"`
+	Page types.Page `json:"page,inline"`
+	Total int `json:"total"`
+	Devices []*DeviceListItem `json:"devices"` // 设备列表元信息 - pure
+}
+
+// DeviceDetailResponse 获取设备详情响应参数
+type DeviceDetailResponse struct {
+	DeviceDetail DeviceDetail `json:"deviceDetail"` // 设备详情(加网络信息)
+}
+
+// DeviceBaseUpdateRequest 更新设备基本信息请求参数
+type DeviceBaseUpdateRequest struct {
+	SN string `json:"sn"` // 必填，作为 public ID
+
+	// 以下字段均为可选，只有非 nil 才表示要更新 (区分未设置和设置为 nil 的情况)
+	FirmwareVersion *string    `json:"firmwareVersion,omitempty"`
+	Status          *string    `json:"status,omitempty" oneof:"activated inactivated disabled scrapped"`
+	ExpireDate      *time.Time `json:"expireDate,omitempty"`
+	ActivationTime  *time.Time `json:"activationTime,omitempty"`
+	Remark          *string    `json:"remark,omitempty"`
 }

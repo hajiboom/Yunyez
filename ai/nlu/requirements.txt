@@ -1,0 +1,14 @@
+# 核心 NLU - [phase 1]
+sentence-transformers==3.2.0          # 最新版，兼容 torch 2.5           # 可选，为未来视觉模块准备
+
+# 分类与数据处理
+scikit-learn==1.5.2
+pandas==2.2.3
+numpy==1.26.4
+
+# 服务
+fastapi==0.115.0
+uvicorn[standard]==0.32.0             # 包含 httptools，性能更好
+
+# 其他
+joblib==1.4.2

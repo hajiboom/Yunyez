@@ -14,13 +14,10 @@
 
 
 
-
-
-
 #### 音频传输头部规范
 
-**Topic： [vendor]/[device_type]/[device_sn]/voice/client**  
-**Topic： [vendor]/[device_type]/[device_sn]/voice/server**
+**Upload Topic： [vendor]/[device_type]/[device_sn]/voice/client**  
+**Publish Topic： [vendor]/[device_type]/[device_sn]/voice/server**
 
 ```c
  0                   1                   2                   3

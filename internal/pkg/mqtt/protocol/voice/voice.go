@@ -28,7 +28,8 @@ type Header struct {
 	CRC16      uint16 // 16 bits, computed over header (without CRC) + payload
 }
 
-// Marshal 序列化音频
+// Marshal 序列化音频协议头
+// @return []byte 序列化后的音频协议头数据
 func (h *Header) Marshal() []byte {
 	buf := make([]byte, HeaderSize)
 
@@ -59,35 +60,28 @@ func (h *Header) Marshal() []byte {
 	return buf
 }
 
-func UnmarshalHeader(data []byte) (*Header, error) {
+// UnmarshalHeader 反序列化音频协议头
+// @param data 音频协议头数据
+// @return error 反序列化错误
+func (h *Header) UnmarshalHeader(data []byte) error {
 	if len(data) < HeaderSize {
-		return nil, errors.New("insufficient data for header (need 12 bytes)")
+		return errors.New("insufficient data for header (need 12 bytes)")
 	}
 
-	version := (data[0] >> 4) & 0x0F
-	AUdioFormat := ((data[0] & 0x0F) << 4) | (data[1] >> 4)
+	h.Version = (data[0] >> 4) & 0x0F
+	h.AudioFormat = ((data[0] & 0x0F) << 4) | (data[1] >> 4)
 
 	// Build SampleRate from 3 parts
-	sampleRate := (uint16(data[1]&0x0F) << 12) |
+	h.SampleRate = (uint16(data[1]&0x0F) << 12) |
 		(uint16(data[2]) << 4) |
 		(uint16(data[3]>>4) & 0x0F)
 
-	ch := (data[3] >> 2) & 0x03
-	f := data[3] & 0x03
-	frameSeq := binary.BigEndian.Uint16(data[4:6])
-	timestamp := binary.BigEndian.Uint16(data[6:8])
-	payloadLen := binary.BigEndian.Uint16(data[8:10])
-	crc16 := binary.BigEndian.Uint16(data[10:12])
+	h.Ch = (data[3] >> 2) & 0x03
+	h.F = data[3] & 0x03
+	h.FrameSeq = binary.BigEndian.Uint16(data[4:6])
+	h.Timestamp = binary.BigEndian.Uint16(data[6:8])
+	h.PayloadLen = binary.BigEndian.Uint16(data[8:10])
+	h.CRC16 = binary.BigEndian.Uint16(data[10:12])
 
-	return &Header{
-		Version:    version,
-		AudioFormat:     AUdioFormat,
-		SampleRate: sampleRate,
-		Ch:         ch,
-		F:          f,
-		FrameSeq:   frameSeq,
-		Timestamp:  timestamp,
-		PayloadLen: payloadLen,
-		CRC16:      crc16,
-	}, nil
+	return nil
 }

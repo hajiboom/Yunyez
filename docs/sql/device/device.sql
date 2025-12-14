@@ -36,12 +36,6 @@ CREATE TYPE power_status_enum AS ENUM (
     'charging'      -- 充电中（对应原 3）
 );
 
--- 设备工作状态枚举
-CREATE TYPE working_status_enum AS ENUM (
-    'idle',         -- 空闲（对应原 0）
-    'active',       -- 活动中（对应原 1）
-    'busy'         -- 忙碌（对应原 2）
-);
 
 DROP TABLE IF EXISTS device_base;
 CREATE TABLE device_base (
@@ -89,7 +83,7 @@ COMMENT ON COLUMN device_base.remark IS '备注（定制设备配置说明等）
 DROP TABLE IF EXISTS device_network;
 CREATE TABLE device_network (
     id BIGSERIAL PRIMARY KEY,
-    device_id BIGINT NOT NULL,
+    device_sn VARCHAR(64) NOT NULL UNIQUE,
     network_type network_type_enum NOT NULL,
     mac_address VARCHAR(64) UNIQUE,
     ip_address VARCHAR(64),
@@ -104,7 +98,7 @@ CREATE TABLE device_network (
 );
 
 -- 为 device_network 表的列添加注释
-COMMENT ON COLUMN device_network.device_id IS '关联设备主表ID';
+COMMENT ON COLUMN device_network.device_sn IS '关联设备主表设备序列号';
 COMMENT ON COLUMN device_network.network_type IS '网络类型';
 COMMENT ON COLUMN device_network.mac_address IS 'MAC地址（WiFi/以太网必填）';
 COMMENT ON COLUMN device_network.ip_address IS '设备IP地址（动态更新）';
@@ -117,39 +111,6 @@ COMMENT ON COLUMN device_network.create_time IS '记录创建时间';
 COMMENT ON COLUMN device_network.update_time IS '记录更新时间';
 COMMENT ON COLUMN device_network.deleted_at IS '软删除标记时间';
 
--- 设备状态表
-DROP TABLE IF EXISTS device_status;
-CREATE TABLE device_status (
-    id BIGSERIAL PRIMARY KEY,
-    device_id BIGINT NOT NULL,
-    battery_level INT NOT NULL DEFAULT 100 CHECK (battery_level BETWEEN 0 AND 100),
-    power_status power_status_enum NOT NULL DEFAULT 'power_on',
-    working_status working_status_enum NOT NULL DEFAULT 'idle',
-    last_heartbeat_time TIMESTAMP,
-    last_message_time TIMESTAMP,
-    cpu_usage NUMERIC(5,2) CHECK (cpu_usage BETWEEN 0 AND 100),
-    memory_usage NUMERIC(5,2) CHECK (memory_usage BETWEEN 0 AND 100),
-    error_code VARCHAR(32),
-    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL DEFAULT NULL
-);
-
--- 为 device_status 表的列添加注释
-COMMENT ON COLUMN device_status.device_id IS '关联设备主表ID';
-COMMENT ON COLUMN device_status.battery_level IS '电池电量（0~100）';
-COMMENT ON COLUMN device_status.power_status IS '供电状态';
-COMMENT ON COLUMN device_status.working_status IS '工作状态';
-COMMENT ON COLUMN device_status.last_heartbeat_time IS '最后一次心跳时间';
-COMMENT ON COLUMN device_status.last_message_time IS '最后一次消息传输时间';
-COMMENT ON COLUMN device_status.cpu_usage IS 'CPU使用率（0~100）';
-COMMENT ON COLUMN device_status.memory_usage IS '内存使用率（0~100）';
-COMMENT ON COLUMN device_status.error_code IS '错误码（硬件故障/网络异常等）';
-COMMENT ON COLUMN device_status.create_time IS '记录创建时间';
-COMMENT ON COLUMN device_status.update_time IS '记录更新时间';
-COMMENT ON COLUMN device_status.deleted_at IS '软删除标记时间';
-
-
 -- ============== 索引 ============== 
 
 -- 设备主表索引（高频查询字段）
@@ -161,13 +122,8 @@ CREATE INDEX idx_device_base_status ON device_base (status);
 CREATE INDEX idx_device_base_deleted_at ON device_base (deleted_at);
 
 -- 设备网络表索引（关联查询+状态查询）
-CREATE INDEX idx_device_network_device_id ON device_network (device_id);
+CREATE INDEX idx_device_network_device_sn ON device_network (device_sn);
 CREATE INDEX idx_device_network_connect_status ON device_network (connect_status);
 CREATE INDEX idx_device_network_network_type ON device_network (network_type);
 CREATE INDEX idx_device_network_deleted_at ON device_network (deleted_at);
 
--- 设备状态表索引（关联查询+心跳/消息时间查询）
-CREATE INDEX idx_device_status_device_id ON device_status (device_id);
-CREATE INDEX idx_device_status_last_heartbeat ON device_status (last_heartbeat_time);
-CREATE INDEX idx_device_status_working_status ON device_status (working_status);
-CREATE INDEX idx_device_status_deleted_at ON device_status (deleted_at);

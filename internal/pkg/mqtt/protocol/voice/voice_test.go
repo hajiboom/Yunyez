@@ -7,15 +7,15 @@ import (
 
 func TestHeaderRoundTrip(t *testing.T) {
 	original := &Header{
-		Version:    1,
-		AudioFormat:  3,        // OPUS
-		SampleRate: 16000,
-		Ch:         1,        // mono
-		F:          1,        // full frame
-		FrameSeq:   42,
-		Timestamp:  1000,
-		PayloadLen: 28,
-		CRC16:      0x1234,
+		Version:     1,
+		AudioFormat: 3,        // OPUS
+		SampleRate:  16000,
+		Ch:          1,        // mono
+		F:           1,        // full frame
+		FrameSeq:    42,
+		Timestamp:   1000,
+		PayloadLen:  28,
+		CRC16:       0x1234,
 	}
 
 	// Marshal
@@ -25,15 +25,16 @@ func TestHeaderRoundTrip(t *testing.T) {
 		t.Fatalf("Expected header size %d, got %d", HeaderSize, len(data))
 	}
 
-	// Unmarshal
-	recovered, err := UnmarshalHeader(data)
+	// Unmarshal into a new Header instance
+	var recovered Header
+	err := recovered.UnmarshalHeader(data)
 	if err != nil {
 		t.Fatal("Unmarshal failed:", err)
 	}
 
 	// Compare
-	if *original != *recovered {
-		t.Errorf("Round-trip mismatch!\nOriginal: %+v\nRecovered: %+v", original, recovered)
+	if *original != recovered {
+		t.Errorf("Round-trip mismatch!\nOriginal: %+v\nRecovered: %+v", original, &recovered)
 	}
 
 	// Also test bit fields explicitly
@@ -65,15 +66,15 @@ func crc_16(data []byte) uint16 {
 func TestFullPacketWithCRC(t *testing.T) {
 	payload := []byte("OPUS_FRAME_1234567890")
 	header := &Header{
-		Version:    1,
-		AudioFormat:  3,
-		SampleRate: 16000,
-		Ch:         1,
-		F:          1,
-		FrameSeq:   100,
-		Timestamp:  2000,
-		PayloadLen: uint16(len(payload)),
-		CRC16:      0, // will compute
+		Version:     1,
+		AudioFormat: 3,
+		SampleRate:  16000,
+		Ch:          1,
+		F:           1,
+		FrameSeq:    100,
+		Timestamp:   2000,
+		PayloadLen:  uint16(len(payload)),
+		CRC16:       0, // will compute
 	}
 
 	// Step 1: marshal header (CRC=0)
@@ -93,7 +94,8 @@ func TestFullPacketWithCRC(t *testing.T) {
 
 	// --- Receiver side simulation ---
 	// Extract header from packet
-	receivedHeader, err := UnmarshalHeader(packet[:HeaderSize])
+	var receivedHeader Header
+	err := receivedHeader.UnmarshalHeader(packet[:HeaderSize])
 	if err != nil {
 		t.Fatal(err)
 	}
