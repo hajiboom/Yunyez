@@ -1,9 +1,19 @@
-.vscode/*
-storage/*
+.vscode/
+storage/
 
 # 前端依赖
-./fronted/admin/yunyez-admin/node_modules/*
-./fronted/v1/yunyez-admin-v1/node_modules/*
+./fronted/admin/yunyez-admin/node_modules/
+./fronted/v1/yunyez-admin-v1/node_modules/
 
 
-ai/nlu/model/*
+# nlu 模型
+ai/nlu/model/
+# asr 模型输出
+ai/asr/out/
+# asr 语音数据
+ai/asr/data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
