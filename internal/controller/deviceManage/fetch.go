@@ -21,7 +21,7 @@ import (
 // @Router /device/fetch [get]
 func FetchDeviceList(c *gin.Context) {
 	var req deviceType.DeviceListRequest
-	if err := c.ShouldBind(&req); err != nil {
+	if err := c.ShouldBindQuery(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"Code": http.StatusBadRequest,
 			"Message": "Invalid request parameter",

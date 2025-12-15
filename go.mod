@@ -6,8 +6,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gin-gonic/gin v1.11.0
-	github.com/google/uuid v1.6.0
-	github.com/hajiboom/mqtt-bridge v0.0.0-20251109223503-5bc3c1e3ba45
+	github.com/google/uuid v1.6.0	
 	github.com/sigurn/crc16 v0.0.0-20240131213347-83fcde1e29d1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
