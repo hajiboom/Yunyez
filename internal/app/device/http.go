@@ -20,7 +20,11 @@ func HTTPStart() {
 	// ...
 
 	// 设备路由
-	deviceGroup := r.Group("/device")
+
+	api := r.Group("/api")
+
+
+	deviceGroup := api.Group("/device")
 	{
 		deviceGroup.GET("/fetch", device_manage.FetchDeviceList)       // 获取设备列表
 		deviceGroup.DELETE("/delete/:sn", device_manage.DeleteDevice)  // 删除设备
