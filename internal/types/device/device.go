@@ -42,7 +42,7 @@ type DeviceListRequest struct {
 type DeviceListResponse struct {
 	Page types.Page `json:"page,inline"`
 	Total int `json:"total"`
-	Devices []*DeviceListItem `json:"devices"` // 设备列表元信息 - pure
+	List []*DeviceListItem `json:"list"` // 设备列表元信息 - pure
 }
 
 // DeviceDetailResponse 获取设备详情响应参数

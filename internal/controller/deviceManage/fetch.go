@@ -2,10 +2,10 @@ package device_manage
 
 import (
 	"net/http"
-	deviceService "yunyez/internal/service/device"
-	deviceType "yunyez/internal/types/device"
-	commonType "yunyez/internal/types/common"
 	logger "yunyez/internal/pkg/logger"
+	deviceService "yunyez/internal/service/device"
+	commonType "yunyez/internal/types/common"
+	deviceType "yunyez/internal/types/device"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,9 +23,9 @@ func FetchDeviceList(c *gin.Context) {
 	var req deviceType.DeviceListRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"Code": http.StatusBadRequest,
+			"Code":    http.StatusBadRequest,
 			"Message": "Invalid request parameter",
-			"Data": nil,
+			"Data":    nil,
 		})
 		return
 	}
@@ -44,34 +44,33 @@ func FetchDeviceList(c *gin.Context) {
 	}
 
 	// 调用服务层获取设备列表
-	devices, total, err := deviceService.ServiceInstance.ListDevices(c, req.Page.PageNum, req.Page.PageSize, filter)	
+	devices, total, err := deviceService.ServiceInstance.ListDevices(c, req.Page.PageNum, req.Page.PageSize, filter)
 	if err != nil {
 		logger.Error(c.Request.Context(), "Failed to list devices", map[string]any{
 			"error": err.Error(),
-			"req": req,
+			"req":   req,
 		})
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"Code": http.StatusInternalServerError,
+			"Code":    http.StatusInternalServerError,
 			"Message": "Failed to list devices",
-			"Data": nil,
+			"Data":    nil,
 		})
 		return
 	}
 
 	response := deviceType.DeviceListResponse{
-		Page:     commonType.Page{         // ← 使用实际使用的分页值（可加兜底）
+		Page: commonType.Page{ // ← 使用实际使用的分页值（可加兜底）
 			PageNum:  req.Page.PageNum,
 			PageSize: req.Page.PageSize,
 		},
-		Total:    int(total),
-		Devices:  devices,
+		Total: int(total),
+		List:  devices,
 	}
 	
-	// 返回设备列表
 	c.JSON(http.StatusOK, gin.H{
-		"Code": http.StatusOK,
+		"Code":    http.StatusOK,
 		"Message": "Success",
-		"Data": response,
+		"Data":    response,
 	})
 }
 
@@ -90,9 +89,9 @@ func FetchDeviceDetail(c *gin.Context) {
 	sn := c.Param("sn")
 	if sn == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"Code": http.StatusBadRequest,
+			"Code":    http.StatusBadRequest,
 			"Message": "Invalid request parameter",
-			"Data": nil,
+			"Data":    nil,
 		})
 		return
 	}
@@ -101,7 +100,7 @@ func FetchDeviceDetail(c *gin.Context) {
 	if err != nil {
 		logger.Error(c.Request.Context(), "Failed to get device by SN", map[string]any{
 			"error": err.Error(),
-			"sn": sn,
+			"sn":    sn,
 		})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -111,21 +110,21 @@ func FetchDeviceDetail(c *gin.Context) {
 	if err != nil {
 		logger.Error(c.Request.Context(), "Failed to get device network info", map[string]any{
 			"error": err.Error(),
-			"sn": sn,
+			"sn":    sn,
 		})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	deviceInfo := &deviceType.DeviceDetail{
-		DeviceBaseInfo: deviceBaseInfo,
+		DeviceBaseInfo:    deviceBaseInfo,
 		DeviceNetworkInfo: networkInfo,
 	}
-	
+
 	// 返回设备详情
 	c.JSON(http.StatusOK, gin.H{
-		"Code": http.StatusOK,
+		"Code":    http.StatusOK,
 		"Message": "Success",
-		"Data": deviceInfo,
+		"Data":    deviceInfo,
 	})
 }
