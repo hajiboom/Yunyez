@@ -235,7 +235,6 @@ func (s *service) ListDevices(ctx context.Context, page, pageSize int, filters m
 	deviceListItems := make([]*deviceType.DeviceListItem, 0, len(devices))
 	for _, dev := range devices {
 		deviceListItems = append(deviceListItems, &deviceType.DeviceListItem{
-			ID:           dev.ID,
 			SN:           dev.SN,
 			DeviceType:   dev.DeviceType,
 			VendorName:   dev.VendorName,
