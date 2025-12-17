@@ -10,9 +10,6 @@ import os
 # ---------------------------------------------
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
-
-app = FastAPI(title="NLU Service", version="1.0")
-
 # Load model on startup
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), "model")
@@ -32,8 +29,31 @@ COMMAND_INTENTS = {
     "deny_action" # 拒绝操作
 }
 
-@app.post("/nlu")
-def predict(text: str):
+
+# ---------------------------------------------
+# NLU 服务
+# ---------------------------------------------
+from pydantic import BaseModel
+
+
+app = FastAPI(title="NLU Service", version="1.0")
+
+# 定义请求体模型
+class NLURequest(BaseModel):
+    text: str  # 输入文本
+
+# 定义响应模型（可选但推荐）
+class NLUResponse(BaseModel):
+    text: str  # 输入文本
+    intent: str  # 预测意图
+    confidence: float  # 置信度
+    is_command: bool  # 是否为命令意图
+
+
+
+@app.post("/nlu", response_model=NLUResponse)
+def predict(request: NLURequest):
+    text = request.text
     emb = encoder.encode([text])
     intent = classifier.predict(emb)[0]
     confidence = float(np.max(classifier.predict_proba(emb)))
