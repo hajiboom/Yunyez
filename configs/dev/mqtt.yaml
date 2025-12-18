@@ -8,25 +8,6 @@ mqtt:
 rule:
   model: "http"
 
-
-
-# @Deprecated 该规则已被弃用，建议使用新的规则
-# rules:
-#   # MQTT 到 HTTP 的转发规则
-#   - rule_id: "device_location_upload"
-#     rule_name: "设备位置上报"
-#     enable: true
-#     source:
-#       protocol: "mqtt"
-#       config:
-#         broker_addr: "tcp://127.0.0.1:1883"
-#         client_id: "bridge_mqtt_source_1"
-#         subscribe_topic: "/device/+/location/server"
-#         qos: 0
-#     target:
-#       protocol: "http"
-#       config:
-#         method: "POST"
-#         url: "http://127.0.0.1:8080/api/device/location"
-#         headers:
-#           Content-Type: "application/json"
+# 订阅主题列表
+topics:
+  - "+/+/+/voice/server"

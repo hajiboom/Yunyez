@@ -12,10 +12,12 @@ type ASR interface {
 }
 
 
-// DouBaoASR 豆包语音识别
-type DouBaoASR struct {}
+type LocalClient struct {
+	Endpoint string `json:"endpoint"`
+}
 
-func (d *DouBaoASR) Transfer(ctx context.Context, header *mqtt_voice.Header, payload []byte) error {
-	// 调用豆包语音识别API
+
+// Transfer 语音识别 音频转换为文本 -- 本地模型
+func (c *LocalClient) Transfer(ctx context.Context, header *mqtt_voice.Header, payload []byte) error {
 	return nil
 }

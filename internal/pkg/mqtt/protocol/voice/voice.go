@@ -1,4 +1,4 @@
-// pkg/mqtt/protocol/voice/voice.go
+// Package voice defines the binary protocol for voice data over MQTT.
 /*
 This package defines the binary protocol for voice data over MQTT.
 It is NOT a general-purpose audio format, but specific to Yunyez MQTT communication.

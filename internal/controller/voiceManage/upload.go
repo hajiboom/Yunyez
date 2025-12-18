@@ -1,6 +1,7 @@
 package voice_manage
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -21,6 +22,8 @@ import (
 // @Failure 400 {object} gin.H{"error": "读取请求体失败"}
 // @Router /voice/upload [post]
 func UploadVoice(c *gin.Context) {
+	fmt.Println("UploadVoice start>>>>>")
+
 	// 读取请求字节
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {

@@ -47,7 +47,7 @@ func (t *Topic) String() string {
 	}, "/")
 }
 
-// 校验 Topic 是否合法
+// Validate 校验 Topic 是否合法
 func (t *Topic) Validate() error {
 	// 检查vendor是否是合法厂商名称
 	if !validateVendor(t.Vendor) {
@@ -121,7 +121,7 @@ func validateDeviceSN(deviceSN string) bool {
 }
 
 // SubscribeTopic 订阅 MQTT 主题
-// 分批订阅主题，每次最多订阅100个
+// 分批订阅主题，每次最多订阅50个
 // 参数：
 //   - client: MQTT 客户端实例
 //   - topics: 主题列表
@@ -137,10 +137,7 @@ func SubscribeTopic(client paho.Client, topics []string) error {
 		return fmt.Errorf("topics is empty")
 	}
 	for i := 0; i < len(topics); i += batch {
-		end := i + batch
-		if end > len(topics) {
-			end = len(topics)
-		}
+		end := min(i + batch, len(topics))
 		topicBatch := topics[i:end]
 		topicMap := make(map[string]byte)
 		for _, topic := range topicBatch {
