@@ -12,14 +12,14 @@ import (
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
 
-const(
-	QoS = 0 // 默认 QoS 等级
-	MQTT_TOPIC_LEVEL = 5 // mqtt topic 层级
-	DEVICE_SN_REGEX = "^[a-zA-Z0-9_]+$" // 设备序列号格式
+const (
+	QoS            = 0                 // 默认 QoS 等级
+	MqttTopicLevel = 5                 // mqtt topic 层级
+	DeviceSNRegex  = "^[a-zA-Z0-9_]+$" // 设备序列号格式
 )
 
 var (
-	regDeviceSN = regexp.MustCompile(DEVICE_SN_REGEX)
+	regDeviceSN = regexp.MustCompile(DeviceSNRegex)
 )
 
 // Topic 用于表示 MQTT 主题
@@ -75,9 +75,9 @@ func TopicParse(topic string) (*Topic, error) {
 		return nil, fmt.Errorf("topic is empty")
 	}
 	parts := strings.Split(topic, "/")
-	if len(parts) < MQTT_TOPIC_LEVEL {
+	if len(parts) < MqttTopicLevel {
 		logger.Error(context.Background(), "topic %s is invalid", map[string]any{
-			"topic": topic,
+			"topic":  topic,
 			"length": len(parts),
 		})
 		return nil, fmt.Errorf("topic %s is invalid", topic)
@@ -95,7 +95,6 @@ func TopicParse(topic string) (*Topic, error) {
 	return obj, nil
 }
 
-
 // ValidateVendor 校验厂商名称是否是合法厂商名称
 func validateVendor(vendor string) bool {
 	if vendor == "" {
@@ -106,7 +105,6 @@ func validateVendor(vendor string) bool {
 	}
 	return true
 }
-
 
 // ValidateDeviceSN 校验设备序列号是否是合法
 // 设备序列号格式：
@@ -125,6 +123,7 @@ func validateDeviceSN(deviceSN string) bool {
 // 参数：
 //   - client: MQTT 客户端实例
 //   - topics: 主题列表
+//
 // 返回值:
 //   - error: 错误信息
 func SubscribeTopic(client paho.Client, topics []string) error {
@@ -137,7 +136,7 @@ func SubscribeTopic(client paho.Client, topics []string) error {
 		return fmt.Errorf("topics is empty")
 	}
 	for i := 0; i < len(topics); i += batch {
-		end := min(i + batch, len(topics))
+		end := min(i+batch, len(topics))
 		topicBatch := topics[i:end]
 		topicMap := make(map[string]byte)
 		for _, topic := range topicBatch {
@@ -146,8 +145,8 @@ func SubscribeTopic(client paho.Client, topics []string) error {
 		if token := client.SubscribeMultiple(topicMap, nil); token.Wait() && token.Error() != nil {
 			logger.Error(ctx, "mqtt.subscribe error", map[string]interface{}{
 				"topics": topicBatch,
-				"error": token.Error(),
-			})	
+				"error":  token.Error(),
+			})
 			return token.Error()
 		}
 		logger.Info(ctx, "mqtt.subscribe success", map[string]interface{}{

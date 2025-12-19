@@ -11,3 +11,7 @@ rule:
 # 订阅主题列表
 topics:
   - "+/+/+/voice/server"
+
+# 音频临时存储路径
+audio:
+  storage: "storage/tmp/audio"

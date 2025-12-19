@@ -17,15 +17,15 @@ const (
 
 // Header 音频协议头
 type Header struct {
-	Version    uint8  // 4 bits (0-15)
-	AudioFormat     uint8  // 8 bits
-	SampleRate uint16 // 16 bits
-	Ch         uint8  // 2 bits (1=mono, 2=stereo, 3=multi)
-	F          uint8  // 2 bits (1=full, 2=fragment, 3=last)
-	FrameSeq   uint16 // 16 bits
-	Timestamp  uint16 // 16 bits
-	PayloadLen uint16 // 16 bits
-	CRC16      uint16 // 16 bits, computed over header (without CRC) + payload
+	Version     uint8  // 4 bits (0-15)
+	AudioFormat uint8  // 8 bits
+	SampleRate  uint16 // 16 bits
+	Ch          uint8  // 2 bits (1=mono, 2=stereo, 3=multi)
+	F           uint8  // 2 bits (1=full, 2=fragment, 3=last)
+	FrameSeq    uint16 // 16 bits
+	Timestamp   uint16 // 16 bits
+	PayloadLen  uint16 // 16 bits
+	CRC16       uint16 // 16 bits, computed over header (without CRC) + payload
 }
 
 // Marshal 序列化音频协议头

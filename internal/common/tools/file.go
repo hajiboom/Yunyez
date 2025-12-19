@@ -1,3 +1,4 @@
+// Package tools 文件操作通用工具函数
 package tools
 
 import (
@@ -28,3 +29,19 @@ func GetRootDir() string {
 	}
 }
 
+
+// WriteFile 写入文件
+// 参数：
+//   - path: 文件路径
+//   - data: 文件数据 字节切片
+// 返回值:
+//   - bool: 是否成功
+//   - error: 处理过程中遇到的错误，若成功则为 nil
+func WriteFile(path string, data []byte) (bool, error) {
+	// 确保目录存在
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return false, err
+	}
+	// 写入文件
+	return true, os.WriteFile(path, data, 0644)
+}

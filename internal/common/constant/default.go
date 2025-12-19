@@ -1,3 +1,4 @@
+// Package constant 常量定义 - 默认
 package constant
 
 // postgresql 相关常量
@@ -30,17 +31,17 @@ const (
 
 // vendor 厂商
 const (
-	Vendor_Public = "public"
-	Vendor_Yunyez = "yunyez"
-	Vendor_Test   = "test"
+	VendorPublic = "public"
+	VendorYunyez = "yunyez"
+	VendorTest = "test"
 )
 
 // GetVendor 获取厂商名称映射
 func GetVendor() map[string]string {
 	return map[string]string{
-		Vendor_Public: "公版",
-		Vendor_Yunyez: "云也子",
-		Vendor_Test:   "测试",
+		VendorPublic: "公版",
+		VendorYunyez: "云也子",
+		VendorTest:   "测试",
 	}
 }
 
@@ -48,10 +49,10 @@ func GetVendor() map[string]string {
 // 【目前只是测试阶段，后续会根据实际场景进行调整】
 // 可能会放弃意图分类采用无监督学习
 const (
-	Intent_PlayMusic = "play_music" // 播放音乐
-	Intent_SetTemperature = "set_temperature" // 设置温度
-	Intent_TurnOnLight = "turn_on_light" // 开灯
-	Intent_TurnOffLight = "turn_off_light" // 关灯
-	Intent_ChitChat = "chit_chat" // 闲聊
-	Intent_DenyAction = "deny_action" // 取消执行
+	IntentPlayMusic = "play_music" // 播放音乐
+	IntentSetTemperature = "set_temperature" // 设置温度
+	IntentTurnOnLight = "turn_on_light" // 开灯
+	IntentTurnOffLight = "turn_off_light" // 关灯
+	IntentChitChat = "chit_chat" // 闲聊
+	IntentDenyAction = "deny_action" // 取消执行
 )

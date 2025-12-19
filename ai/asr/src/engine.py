@@ -29,9 +29,25 @@ class ASREngine:
         """
         音频转文本（带后处理）
         """
-        result = self.model.generate(input=audio_path)
-        raw_text = result[0]["text"]
-        return postprocess_text(raw_text, ASR_CONFIG["postprocess"])
+        try:
+            result = self.model.generate(input=audio_path)
+            print("FunASR result:", result)  # 👈 关键：打印原始结果
+            
+            if not result or len(result) == 0:
+                return ""
+            
+            raw_text = result[0].get("text", "")
+            print("Raw text:", repr(raw_text))
+            
+            processed = postprocess_text(raw_text, ASR_CONFIG["postprocess"])
+            print("Processed text:", repr(processed))
+            return processed
+            
+        except Exception as e:
+            import traceback
+            print("Transcribe error:", str(e))
+            traceback.print_exc()
+            raise
 
 # 全局单例（避免重复加载模型）
 asr_engine = ASREngine()

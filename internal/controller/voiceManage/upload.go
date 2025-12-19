@@ -8,6 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"yunyez/internal/pkg/logger"
+	mqtt_common "yunyez/internal/pkg/mqtt/common"
+	voiceService "yunyez/internal/service/voice"
 	mqtt_voice "yunyez/internal/pkg/mqtt/protocol/voice"
 )
 
@@ -43,4 +45,33 @@ func UploadVoice(c *gin.Context) {
 		return
 	}
 	// 音频数据处理
+	switch header.F {
+	case mqtt_common.VoiceFrameFull: // 完整帧
+		if err := voiceService.ProcessFull(c.Request.Context(), c.GetHeader("ClientID"), &header, body[mqtt_voice.HeaderSize:]); err != nil {
+			logger.Error(c.Request.Context(), "voiceService.ProcessFull failed", map[string]any{
+				"error": err.Error(),
+				"topic": c.GetHeader("Topic"),
+				"payload_len": len(body[mqtt_voice.HeaderSize:]),
+				"ClientID": c.GetHeader("ClientID"),
+			})
+			return
+		}
+	case mqtt_common.VoiceFrameFragment, mqtt_common.VoiceFrameLast: // 分片帧, 最后一帧
+		if err := voiceService.ProcessFragment(c.Request.Context(), c.GetHeader("ClientID"), &header, body[mqtt_voice.HeaderSize:]); err != nil {
+			logger.Error(c.Request.Context(), "voiceService.ProcessFragment failed", map[string]any{
+				"error": err.Error(),
+				"topic": c.GetHeader("Topic"),
+				"payload_len": len(body[mqtt_voice.HeaderSize:]),
+				"ClientID": c.GetHeader("ClientID"),
+			})
+			return
+		}
+	default:
+		logger.Error(c.Request.Context(), "voiceManage.UploadVoice unknown frame type", map[string]any{
+			"topic": c.GetHeader("Topic"),
+			"payload_len": len(body[mqtt_voice.HeaderSize:]),
+			"ClientID": c.GetHeader("ClientID"),
+		})
+		return
+	}
 }
