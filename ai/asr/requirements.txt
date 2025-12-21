@@ -1,0 +1,11 @@
+# 核心 ASR 模型
+funasr==1.1.9
+modelscope==1.11.0
+
+# Web 服务
+fastapi==0.110.0
+uvicorn[standard]==0.27.1
+
+# 工具
+python-multipart==0.0.9
+loguru==0.7.2

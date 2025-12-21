@@ -4,6 +4,7 @@ import (
 	"time"
 
 	mqtt_common "yunyez/internal/pkg/mqtt/common"
+
 	"github.com/sigurn/crc16"
 )
 
@@ -25,19 +26,20 @@ type Message struct {
 //   - data: 消息数据 字节切片
 //   - frameType: 音频帧类型
 //   - config: 语音配置[采样率、格式、声道数]
+//
 // 返回值:
 //   - []byte: 包含协议头的音频消息 payload
 func BuildPayload(seq uint16, data []byte, frameType uint8, config Message) []byte {
 	header := &Header{
-		Version:    mqtt_common.VOICE_VERSION,
-		AudioFormat:  config.AudioFormat,
-		SampleRate: config.AudioSampleRate,
-		Ch:         config.AudioChannel,
-		F:          frameType,
-		FrameSeq:   seq,
-		Timestamp:  uint16(time.Now().Unix() & 0xFFFF),
-		PayloadLen: uint16(len(data)),
-		CRC16:      0,
+		Version:     mqtt_common.VoiceVersion,
+		AudioFormat: config.AudioFormat,
+		SampleRate:  config.AudioSampleRate,
+		Ch:          config.AudioChannel,
+		F:           frameType,
+		FrameSeq:    seq,
+		Timestamp:   uint16(time.Now().Unix() & 0xFFFF),
+		PayloadLen:  uint16(len(data)),
+		CRC16:       0,
 	}
 
 	headerBytes := header.Marshal()
@@ -59,10 +61,11 @@ func BuildPayload(seq uint16, data []byte, frameType uint8, config Message) []by
 //   - seq: 消息序号 从0开始递增
 //   - data: 消息数据 字节切片
 //   - config: 语音配置[采样率、格式、声道数]
+//
 // 返回值:
 //   - []byte: 包含协议头的完整音频消息 payload
 func BuildFullPayload(seq uint16, data []byte, config Message) []byte {
-	return BuildPayload(seq, data, mqtt_common.VOICE_FRAME_FULL, config)
+	return BuildPayload(seq, data, mqtt_common.VoiceFrameFull, config)
 }
 
 // BuildStreamPayload 构建流式音频消息 payload（包含协议头）
@@ -71,12 +74,13 @@ func BuildFullPayload(seq uint16, data []byte, config Message) []byte {
 //   - data: 消息数据 字节切片
 //   - config: 语音配置[采样率、格式、声道数]
 //   - isLast: 是否为最后一帧
+//
 // 返回值:
 //   - []byte: 包含协议头的流式音频消息 payload
 func BuildStreamPayload(seq uint16, data []byte, config Message, isLast bool) []byte {
-	frameType := mqtt_common.VOICE_FRAME_FRAGMENT
+	frameType := mqtt_common.VoiceFrameFragment
 	if isLast {
-		frameType = mqtt_common.VOICE_FRAME_LAST
+		frameType = mqtt_common.VoiceFrameLast
 	}
 	return BuildPayload(seq, data, uint8(frameType), config)
 }
