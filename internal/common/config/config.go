@@ -40,6 +40,7 @@ var (
 		"database.yaml", // 数据库配置文件
 		"mqtt.yaml",     // MQTT 配置文件
 		"default.yaml",  // 通用配置文件
+		"ai.yaml",       // AI 配置文件
 	}
 )
 
@@ -157,7 +158,6 @@ func GetViperInstance() *viper.Viper {
 
 // ================================================================
 // 获取配置值相关函数
-
 
 // GetString 获取字符串配置值
 func GetString(key string) string {
