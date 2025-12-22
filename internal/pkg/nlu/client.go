@@ -1,3 +1,4 @@
+// Package nlu NLU 意图识别客户端
 package nlu
 
 import (
@@ -11,7 +12,7 @@ import (
 )
 
 var (
-	NRLAddress = config.GetString("nlu.address")
+	NRLAddress = config.GetString("nlu.endpoint")
 	once sync.Once
 	NLUClient *Client
 )
@@ -21,7 +22,7 @@ type Input struct {
 	Text string `json:"text"` // 输入的文本
 }
 
-// NLU 意图识别结果
+// Intent NLU 意图识别结果
 type Intent struct {
 	Text       string  `json:"text"`       // 输入的文本
 	Intent     string  `json:"intent"`     // 意图
@@ -30,13 +31,13 @@ type Intent struct {
 }
 
 type Client struct {
-	Address string `json:"address"` // NLU 服务地址
+	Endpoint string `json:"endpoint"` // NLU 服务地址
 }
 
 func NewClient() *Client {
 	once.Do(func() {
 		NLUClient = &Client{
-			Address: NRLAddress,
+			Endpoint: NRLAddress,
 		}
 	})
 	return NLUClient
@@ -45,7 +46,7 @@ func NewClient() *Client {
 // Health 检查 NLU 服务健康状态
 // 在首次创建客户端时调用，检查 NLU 服务是否健康
 func (c *Client) Health() error {
-	httpReq, err := http.NewRequest("GET", c.Address+"/health", nil)
+	httpReq, err := http.NewRequest("GET", c.Endpoint+"/health", nil)
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
@@ -72,7 +73,7 @@ func (c *Client) Predict(input *Input) (*Intent, error) {
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", c.Address, bytes.NewBuffer(jsonData))
+	httpReq, err := http.NewRequest("POST", c.Endpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}

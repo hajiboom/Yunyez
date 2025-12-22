@@ -1,18 +1,20 @@
+// Package device 设备服务
 package device
 
 import (
 	"context"
 	"fmt"
 	"yunyez/internal/common/config"
+	device_manage "yunyez/internal/controller/deviceManage"
+	voice_manage "yunyez/internal/controller/voiceManage"
 	logger "yunyez/internal/pkg/logger"
 	mqtt "yunyez/internal/pkg/mqtt"
-	device_manage "yunyez/internal/controller/deviceManage"
 
 
 	"github.com/gin-gonic/gin"
 )
 
-// 设备服务入口
+// Start 设备服务入口
 func Start() {
 	fmt.Println("device current environment: ", config.GetString("app.env"))
 	// 启动mqtt连接
@@ -40,7 +42,6 @@ func HTTPStart() {
 	// ...
 
 	// 设备路由
-
 	api := r.Group("/api")
 
 
@@ -51,6 +52,9 @@ func HTTPStart() {
 		deviceGroup.GET("/fetch/:sn", device_manage.FetchDeviceDetail) // 获取设备详情
 		deviceGroup.PUT("/update", device_manage.UpdateDeviceInfo)     // 更新设备
 	}
+
+	// 语音路由
+	r.POST("/voice", voice_manage.UploadVoice) // 发送语音
 
 	// 获取 HTTP 端口号
 	port := ":" + config.GetString("http.port")

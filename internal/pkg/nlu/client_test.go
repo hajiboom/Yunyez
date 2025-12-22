@@ -16,8 +16,8 @@ func TestPredictTurnOnLight(t *testing.T) {
 	if err != nil {
 		t.Errorf("Predict failed: %v", err)
 	}
-	if intent.Intent != constant.Intent_TurnOnLight {
-		t.Errorf("Predict failed: expect %s, got %s", constant.Intent_TurnOnLight, intent.Intent)
+	if intent.Intent != constant.IntentTurnOnLight {
+		t.Errorf("Predict failed: expect %s, got %s", constant.IntentTurnOnLight, intent.Intent)
 	}
 
 	// 测试用例2: 打开卧室的灯
@@ -28,8 +28,8 @@ func TestPredictTurnOnLight(t *testing.T) {
 	if err != nil {
 		t.Errorf("Predict failed: %v", err)
 	}
-	if intent.Intent != constant.Intent_TurnOnLight {
-		t.Errorf("Predict failed: expect %s, got %s", constant.Intent_TurnOnLight, intent.Intent)
+	if intent.Intent != constant.IntentTurnOnLight {
+		t.Errorf("Predict failed: expect %s, got %s", constant.IntentTurnOnLight, intent.Intent)
 	}
 }
 
@@ -44,8 +44,8 @@ func TestPredictTurnOffLight(t *testing.T) {
 	if err != nil {
 		t.Errorf("Predict failed: %v", err)
 	}
-	if intent.Intent != constant.Intent_TurnOffLight {
-		t.Errorf("Predict failed: expect %s, got %s", constant.Intent_TurnOffLight, intent.Intent)
+	if intent.Intent != constant.IntentTurnOffLight {
+		t.Errorf("Predict failed: expect %s, got %s", constant.IntentTurnOffLight, intent.Intent)
 	}
 
 	// 测试用例2: 关闭客厅的灯
@@ -56,8 +56,8 @@ func TestPredictTurnOffLight(t *testing.T) {
 	if err != nil {
 		t.Errorf("Predict failed: %v", err)
 	}
-	if intent.Intent != constant.Intent_TurnOffLight {
-		t.Errorf("Predict failed: expect %s, got %s", constant.Intent_TurnOffLight, intent.Intent)
+	if intent.Intent != constant.IntentTurnOffLight {
+		t.Errorf("Predict failed: expect %s, got %s", constant.IntentTurnOffLight, intent.Intent)
 	}
 }
 
@@ -72,8 +72,8 @@ func TestPredictSetTemperature(t *testing.T) {
 	if err != nil {
 		t.Errorf("Predict failed: %v", err)
 	}
-	if intent.Intent != constant.Intent_SetTemperature {
-		t.Errorf("Predict failed: expect %s, got %s", constant.Intent_SetTemperature, intent.Intent)
+	if intent.Intent != constant.IntentSetTemperature {
+		t.Errorf("Predict failed: expect %s, got %s", constant.IntentSetTemperature, intent.Intent)
 	}
 
 	// 测试用例2: 空调温度调到26度
@@ -84,8 +84,8 @@ func TestPredictSetTemperature(t *testing.T) {
 	if err != nil {
 		t.Errorf("Predict failed: %v", err)
 	}
-	if intent.Intent != constant.Intent_SetTemperature {
-		t.Errorf("Predict failed: expect %s, got %s", constant.Intent_SetTemperature, intent.Intent)
+	if intent.Intent != constant.IntentSetTemperature {
+		t.Errorf("Predict failed: expect %s, got %s", constant.IntentSetTemperature, intent.Intent)
 	}
 }
 
@@ -100,8 +100,8 @@ func TestPredictPlayMusic(t *testing.T) {
 	if err != nil {
 		t.Errorf("Predict failed: %v", err)
 	}
-	if intent.Intent != constant.Intent_PlayMusic {
-		t.Errorf("Predict failed: expect %s, got %s", constant.Intent_PlayMusic, intent.Intent)
+	if intent.Intent != constant.IntentPlayMusic {
+		t.Errorf("Predict failed: expect %s, got %s", constant.IntentPlayMusic, intent.Intent)
 	}
 
 	// 测试用例2: 播放周杰伦的歌
@@ -112,8 +112,8 @@ func TestPredictPlayMusic(t *testing.T) {
 	if err != nil {
 		t.Errorf("Predict failed: %v", err)
 	}
-	if intent.Intent != constant.Intent_PlayMusic {
-		t.Errorf("Predict failed: expect %s, got %s", constant.Intent_PlayMusic, intent.Intent)
+	if intent.Intent != constant.IntentPlayMusic {
+		t.Errorf("Predict failed: expect %s, got %s", constant.IntentPlayMusic, intent.Intent)
 	}
 }
 
@@ -128,8 +128,8 @@ func TestPredictChitChat(t *testing.T) {
 	if err != nil {
 		t.Errorf("Predict failed: %v", err)
 	}
-	if intent.Intent != constant.Intent_ChitChat {
-		t.Errorf("Predict failed: expect %s, got %s", constant.Intent_ChitChat, intent.Intent)
+	if intent.Intent != constant.IntentChitChat {
+		t.Errorf("Predict failed: expect %s, got %s", constant.IntentChitChat, intent.Intent)
 	}
 
 	// 测试用例2: 早上好
@@ -140,8 +140,8 @@ func TestPredictChitChat(t *testing.T) {
 	if err != nil {
 		t.Errorf("Predict failed: %v", err)
 	}
-	if intent.Intent != constant.Intent_ChitChat {
-		t.Errorf("Predict failed: expect %s, got %s", constant.Intent_ChitChat, intent.Intent)
+	if intent.Intent != constant.IntentChitChat {
+		t.Errorf("Predict failed: expect %s, got %s", constant.IntentChitChat, intent.Intent)
 	}
 }
 
@@ -156,8 +156,8 @@ func TestPredictDenyAction(t *testing.T) {
 	if err != nil {
 		t.Errorf("Predict failed: %v", err)
 	}
-	if intent.Intent != constant.Intent_DenyAction {
-		t.Errorf("Predict failed: expect %s, got %s", constant.Intent_DenyAction, intent.Intent)
+	if intent.Intent != constant.IntentDenyAction {
+		t.Errorf("Predict failed: expect %s, got %s", constant.IntentDenyAction, intent.Intent)
 	}
 
 	// 测试用例2: 不用关灯
@@ -168,7 +168,7 @@ func TestPredictDenyAction(t *testing.T) {
 	if err != nil {
 		t.Errorf("Predict failed: %v", err)
 	}
-	if intent.Intent != constant.Intent_DenyAction {
-		t.Errorf("Predict failed: expect %s, got %s", constant.Intent_DenyAction, intent.Intent)
+	if intent.Intent != constant.IntentDenyAction {
+		t.Errorf("Predict failed: expect %s, got %s", constant.IntentDenyAction, intent.Intent)
 	}
 }
