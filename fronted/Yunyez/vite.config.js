@@ -4,10 +4,13 @@ import vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import { viteMockServe } from 'vite-plugin-mock' // 导入Mock插件
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue(),
+
+
      AutoImport({
       resolvers: [ElementPlusResolver()],
     }),
@@ -27,9 +30,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: import.meta.env.VITE_API_BASE_URL,
         changeOrigin: true,
-        // rewrite: (path) => path.replace(/^\/api/, ''),
+        // rewrite: (path) => `/api${path}`, // 给路径开头加 /api
       },
     },
   },
