@@ -39,16 +39,11 @@
             </el-menu-item>
 
             <!-- 设备管理 -->
-             
-                 <el-menu-item index="/Dashboard/deviceManage" class="sidebar-menu-item"  >
-              
+                 <el-menu-item index="/deviceManage" class="sidebar-menu-item"  >
                 <i class="iconfont icon-shouji"></i>
             
               <span>设备管理</span>
             </el-menu-item>
-           
-           
-
             <!-- 实时图像 -->
             <el-menu-item index="/image" class="sidebar-menu-item">
              
@@ -205,5 +200,8 @@ const handleLogout = () => {
 // 给外层容器加100%高度，确保aside能撑满
 .common-layout {
   height: 100vh;
+}
+.el-main{
+  background-color: #e8e8e8;
 }
 </style>
