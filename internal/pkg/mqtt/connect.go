@@ -1,3 +1,4 @@
+// Package mqtt MQTT连接管理
 package mqtt
 
 import (

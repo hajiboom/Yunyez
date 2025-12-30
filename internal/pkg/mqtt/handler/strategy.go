@@ -1,3 +1,4 @@
+// Package handler 消息处理策略
 package handler
 
 import (
@@ -11,7 +12,7 @@ import (
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
 
-// MQTT消息 转发结构体
+// Message MQTT消息 转发结构体
 type Message struct {
 	Topic       string `json:"topic"`       // topic
 	CommandType string `json:"commandType"` // 命令类型
@@ -21,12 +22,11 @@ type Message struct {
 
 }
 
-// MQTT 消息处理策略
+// Strategy MQTT 消息处理策略
 type Strategy interface {
 	Send(ctx context.Context, msg *Message)
 }
 
-// -----------------------------------------------------------
 // SendHandler 消息转发处理结构体
 type SendHandler struct {
 	Sender Strategy
@@ -37,7 +37,7 @@ type SendHandler struct {
 func (s *SendHandler) Set(model string, client *paho.Client) {
 	switch model {
 		case "http":
-			s.Sender = &HttpStrategy{client: client}
+			s.Sender = &HTTPStrategy{client: client}
 		default:
 			s.Sender = &KafkaStrategy{client: client}
 	}
@@ -53,8 +53,8 @@ func (s *SendHandler) Send(ctx context.Context, msg *Message) {
 
 // -----------------------------------------------------------
 
-// HttpStrategy HTTP 消息处理策略
-type HttpStrategy struct{
+// HTTPStrategy HTTP 消息处理策略
+type HTTPStrategy struct{
 	client *paho.Client // MQTT 客户端实例
 }
 
@@ -62,13 +62,23 @@ type HttpStrategy struct{
 // 参数：
 //   - ctx: 上下文
 //   - msg: MQTT 消息
-func (s *HttpStrategy) Send(ctx context.Context, msg *Message) {
+func (s *HTTPStrategy) Send(ctx context.Context, msg *Message) {
 
 	httpAddr := config.GetString("http.addr")
 	httpPort := config.GetString("http.port")
 		
 	// topic 对应的 HTTP 接口地址
 	url := fmt.Sprintf("%s:%s/%s", httpAddr, httpPort, msg.CommandType)
+
+
+	// debug
+	logger.Info(ctx, "Sending HTTP request", map[string]any{
+		"url": url,
+		"topic": msg.Topic,
+		"clientID": msg.ClientID,
+		"startTime": msg.StartTime,
+	})
+
 	// 构造 HTTP 请求
 	header := http.Header{}
 	header.Set("Content-Type", "application/json")

@@ -1,3 +1,4 @@
+// Package config 配置管理
 package config
 
 import (
@@ -18,8 +19,8 @@ import (
 
 // 基本配置文件
 var (
-	BASE_CONFIG_FILE   = "configs/config.yaml" // 基本配置文件
-	BASE_CONFIG_FOLDER = "configs/"            // 基本配置文件目录
+	BaseConfigFile   = "configs/config.yaml" // 基本配置文件
+	BaseConfigFolder = "configs/"            // 基本配置文件目录
 )
 
 // configHolder 用于原子地保存配置对象
@@ -39,6 +40,7 @@ var (
 		"database.yaml", // 数据库配置文件
 		"mqtt.yaml",     // MQTT 配置文件
 		"default.yaml",  // 通用配置文件
+		"ai.yaml",       // AI 配置文件
 	}
 )
 
@@ -68,7 +70,7 @@ func initConfig() error {
 
 	// 获取项目根目录
 	wd := tools.GetRootDir()
-	defaultConfig := filepath.Join(wd, BASE_CONFIG_FILE)
+	defaultConfig := filepath.Join(wd, BaseConfigFile)
 	newViper.SetConfigFile(defaultConfig)
 	watchConfig(newViper, defaultConfig)
 	if err := newViper.MergeInConfig(); err != nil {
@@ -78,11 +80,11 @@ func initConfig() error {
 	// 获取环境变量
 	environment := newViper.GetString("app.env")
 	if environment == "" {
-		log.Fatalf("env is not set in config file: %s", filepath.Join(wd, BASE_CONFIG_FILE))
+		log.Fatalf("env is not set in config file: %s", filepath.Join(wd, BaseConfigFile))
 	}
 
 	for _, file := range commonConfigFiles {
-		path := filepath.Join(wd, BASE_CONFIG_FOLDER, file)
+		path := filepath.Join(wd, BaseConfigFolder, file)
 		log.Printf("common config file path: %s", path)
 		newViper.SetConfigFile(path)
 		watchConfig(newViper, path)
@@ -92,7 +94,7 @@ func initConfig() error {
 	}
 
 	for _, file := range envConfigFiles {
-		path := filepath.Join(wd, BASE_CONFIG_FOLDER, environment, file)
+		path := filepath.Join(wd, BaseConfigFolder, environment, file)
 		log.Printf("special config file path: %s", path)
 		newViper.SetConfigFile(path)
 		watchConfig(newViper, path)
@@ -154,7 +156,8 @@ func GetViperInstance() *viper.Viper {
 	return getViper()
 }
 
-// ======= 配置文件相关函数 =======
+// ================================================================
+// 获取配置值相关函数
 
 // GetString 获取字符串配置值
 func GetString(key string) string {
@@ -178,6 +181,20 @@ func GetInt(key string) int {
 // GetIntWithDefault 获取整数配置值，若为空则返回默认值
 func GetIntWithDefault(key string, defaultValue int) int {
 	val := getViper().GetInt(key)
+	if val == 0 {
+		return defaultValue
+	}
+	return val
+}
+
+// GetFloat64 get float64 config value
+func GetFloat64(key string) float64 {
+	return getViper().GetFloat64(key)
+}
+
+// GetFloat64WithDefault get float64 config value with default value
+func GetFloat64WithDefault(key string, defaultValue float64) float64 {
+	val := getViper().GetFloat64(key)
 	if val == 0 {
 		return defaultValue
 	}

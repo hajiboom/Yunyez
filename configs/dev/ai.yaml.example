@@ -1,0 +1,10 @@
+# Example config for Qwen API
+# Copy this to qwen.yaml and fill in your real API key
+qwen:
+  model: [xxxx]
+  api_key: [xxxxx]
+  endpoint: https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+  systemDesc: "你是一个智能语音助手，请用简洁的纯中文回答问题。不要使用任何 Markdown 格式（如 **加粗**、### 标题、代码块等），不要包含特殊符号，只输出自然语言文本"
+  params:
+    role: user
+    stream: true

@@ -1,18 +1,42 @@
+// Package common mqtt 常量定义
 package common
 
 const (
-	VOICE_VERSION        = 0x01 // 版本号 1.0
+	VoiceVersion = 0x01 // 版本号 1.0
 
 	// 音频帧类型
-	VOICE_FRAME_FULL     = 0x01 // 完整帧
-	VOICE_FRAME_FRAGMENT = 0x02 // 分片帧
-	VOICE_FRAME_LAST     = 0x03 // 最后一帧
+	VoiceFrameFull     = 0x01 // 完整帧
+	VoiceFrameFragment = 0x02 // 分片帧
+	VoiceFrameLast     = 0x03 // 最后一帧
 
 	// 音频格式
-	VOICE_AUDIO_FORMAT_PCM   = 0x01 // pcm
-	VOICE_AUDIO_FORMAT_AAC   = 0x02 // aac
-	VOICE_AUDIO_FORMAT_OPUS  = 0x03 // opus
-	VOICE_AUDIO_FORMAT_MP3   = 0x04 // mp3
-	VOICE_AUDIO_FORMAT_G711A = 0x05 // g711a
-	VOICE_AUDIO_FORMAT_G711U = 0x06 // g711u
+	VoiceAudioFormatPcm   = 0x01 // pcm
+	VoiceAudioFormatAac   = 0x02 // aac
+	VoiceAudioFormatOpus  = 0x03 // opus
+	VoiceAudioFormatMp3   = 0x04 // mp3
+	VoiceAudioFormatG711A = 0x05 // g711a
+	VoiceAudioFormatG711U = 0x06 // g711u
+	VoiceAudioFormatWav   = 0x07 // wav
 )
+
+// AudioFormatString 获取音频格式
+func AudioFormatString(format uint8) string {
+	switch format {
+	case VoiceAudioFormatPcm:
+		return "pcm"
+	case VoiceAudioFormatAac:
+		return "aac"
+	case VoiceAudioFormatOpus:
+		return "opus"
+	case VoiceAudioFormatMp3:
+		return "mp3"
+	case VoiceAudioFormatG711A:
+		return "g711a"
+	case VoiceAudioFormatG711U:
+		return "g711u"
+	case VoiceAudioFormatWav:
+		return "wav"
+	default:
+		return "unknown"
+	}
+}

@@ -13,19 +13,34 @@ import (
 )
 
 var (
-	mqtt_address = config.GetString("mqtt.address")         // MQTT 代理地址
+	mqttAddress = config.GetString("mqtt.address")         // MQTT 代理地址
 	username     = config.GetString("mqtt.client.username") // MQTT 客户端用户名
 	password     = config.GetString("mqtt.client.password") // MQTT 客户端密码
 	Model        = config.GetString("rule.model")           // 消息转发模型
 
-	MQTT_CLIENT paho.Client // MQTT 客户端实例
+	MqttClient paho.Client // MQTT 客户端实例
 )
 
 var (
 	// OnConnectHandler 连接成功处理函数
 	// 当客户端成功连接到 MQTT 代理时调用
+	// 1.订阅主题
 	OnConnectHandler paho.OnConnectHandler = func(client paho.Client) {
-		
+		topics := config.GetList("topics")
+		if len(topics) == 0 {
+			logger.Error(context.TODO(), "mqtt.core.OnConnectHandler error", map[string]interface{}{
+				"error": "rule.topics is empty",
+			})
+			return
+		}
+		// 订阅主题
+		err := SubscribeTopic(client, topics)
+		if err != nil {
+			logger.Error(context.TODO(), "mqtt.core.OnConnectHandler error", map[string]interface{}{
+				"error": err,
+			})
+			return
+		}
 	}
 
 	// ConnectionLostHandler 连接丢失处理函数
@@ -64,7 +79,7 @@ var (
 
 			// 1.路由策略
 			strategy := &handler.SendHandler{}
-			strategy.Set(Model, &MQTT_CLIENT)
+			strategy.Set(Model, &MqttClient)
 			strategy.Send(ctx, message)
 
 			logger.Info(ctx, "mqtt.core.MessageHandler success", map[string]interface{}{
@@ -75,7 +90,7 @@ var (
 )
 
 func InitMQTTClient() error {
-	opts := paho.NewClientOptions().AddBroker(mqtt_address)
+	opts := paho.NewClientOptions().AddBroker(mqttAddress)
 	// 其他配置
 	opts.SetClientID(uuid.New().String())
 	opts.SetUsername(username)
@@ -88,9 +103,9 @@ func InitMQTTClient() error {
 	opts.SetConnectionLostHandler(ConnectionLostHandler) // 连接丢失处理函数
 	opts.SetDefaultPublishHandler(MessageHandler)        // 默认消息处理函数
 
-	MQTT_CLIENT = paho.NewClient(opts)
+	MqttClient = paho.NewClient(opts)
 	// 连接MQTT集群
-	if err := ConnectToBroker(MQTT_CLIENT); err != nil {
+	if err := ConnectToBroker(MqttClient); err != nil {
 		return err
 	}
 
@@ -98,8 +113,8 @@ func InitMQTTClient() error {
 	// 每30秒检测一次连接状态，若断开则尝试重连
 	go func() {
 		for {
-			if !MQTT_CLIENT.IsConnected() {
-				if err := ConnectToBroker(MQTT_CLIENT); err != nil {
+			if !MqttClient.IsConnected() {
+				if err := ConnectToBroker(MqttClient); err != nil {
 					logger.Error(context.TODO(), "mqtt.connect error", map[string]interface{}{
 						"error": err,
 					})
@@ -110,7 +125,7 @@ func InitMQTTClient() error {
 	}()
 
 	logger.Info(context.TODO(), "mqtt.client init success", map[string]interface{}{
-		"address":   mqtt_address,
+		"address":   mqttAddress,
 		"client_id": opts.ClientID,
 	})
 	return nil
