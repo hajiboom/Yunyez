@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  asr:
+    build:
+      context: ./asr
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    container_name: yunyez-asr
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  nlu:
+    build:
+      context: ./nlu
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    container_name: yunyez-nlu
+
+  tts:
+    build:
+      context: ./tts
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    container_name: yunyez-tts

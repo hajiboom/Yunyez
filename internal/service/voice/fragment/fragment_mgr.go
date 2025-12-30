@@ -1,5 +1,5 @@
-// Package voice  分片管理器
-package voice
+// Package fragment  分片管理器
+package fragment
 
 import (
 	"bytes"

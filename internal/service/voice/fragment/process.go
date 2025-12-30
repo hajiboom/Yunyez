@@ -1,5 +1,5 @@
-// Package voice provides voice processing services.
-package voice
+// Package fragment  分片处理
+package fragment
 
 import (
 	"context"
@@ -7,17 +7,18 @@ import (
 	"path/filepath"
 	config "yunyez/internal/common/config"
 	tools "yunyez/internal/common/tools"
+	asr "yunyez/internal/pkg/agent/asr"
+	nlu "yunyez/internal/pkg/agent/nlu"
+	_ "yunyez/internal/pkg/agent/llm/qwen"
 	logger "yunyez/internal/pkg/logger"
 	mqtt_constant "yunyez/internal/pkg/mqtt/common"
 	mqtt_voice "yunyez/internal/pkg/mqtt/protocol/voice"
-	nlu "yunyez/internal/pkg/nlu"
 )
 
 var (
-	audioStorage = config.GetString("audio.storage") // 音频临时存储目录
-	asrClient    = NewLocalASRClient()               // ASR 语音识别客户端 - 本地模型
-	nluClient    = nlu.NewClient()                   // NLU 自然语言理解客户端 - 本地模型
-	fragmentMgr  = NewFragmentManager()              // 分片帧管理
+	audioStorage = config.GetString("audio.storage")                                                 // 音频临时存储目录
+	asrClient    = asr.NewASRClient(config.GetString("asr.model"), config.GetString("asr.endpoint")) // ASR 语音识别客户端 - 本地模型
+	nluClient    = nlu.NewClient()                                                                   // NLU 自然语言理解客户端 - 本地模型
 )
 
 // ProcessFull 处理完整帧
@@ -30,12 +31,12 @@ var (
 // 返回值:
 //   - error: 处理过程中遇到的错误，若成功则为 nil
 func ProcessFull(ctx context.Context, clientID string, header *mqtt_voice.Header, payload []byte) error {
-	
+
 	logger.Info(ctx, "ProcessFull", map[string]any{
 		"clientID": clientID,
 		"header":   header,
 	})
-	
+
 	// 暂存完整帧
 	ext := mqtt_constant.AudioFormatString(header.AudioFormat)
 	// example: storage/tmp/audio/[device_sn]/1694567890_0.wav
@@ -51,6 +52,7 @@ func ProcessFull(ctx context.Context, clientID string, header *mqtt_voice.Header
 	} else if !ok {
 		return fmt.Errorf("write audio file failed: file exists")
 	}
+
 
 	// asr 识别
 	text, err := asrClient.Transfer(ctx, payload)

@@ -9,9 +9,4 @@ logger:
   storage: storage/logs # 日志存储路径
   expire: 90              # 日志过期时间，单位：天
 
-# NLU 语义识别服务
-nlu:
-  endpoint: "http://127.0.0.1:8001/nlu" # NLU 服务地址
-# ASR 语音识别服务
-asr:
-  endpoint: "http://127.0.0.1:8002/asr" # ASR 服务地址
+

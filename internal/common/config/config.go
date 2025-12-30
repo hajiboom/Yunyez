@@ -187,6 +187,20 @@ func GetIntWithDefault(key string, defaultValue int) int {
 	return val
 }
 
+// GetFloat64 get float64 config value
+func GetFloat64(key string) float64 {
+	return getViper().GetFloat64(key)
+}
+
+// GetFloat64WithDefault get float64 config value with default value
+func GetFloat64WithDefault(key string, defaultValue float64) float64 {
+	val := getViper().GetFloat64(key)
+	if val == 0 {
+		return defaultValue
+	}
+	return val
+}
+
 // GetBool 获取布尔配置值
 func GetBool(key string) bool {
 	val := getViper().GetBool(key)

@@ -1,4 +1,5 @@
-package voice
+// Package asr 语音识别服务
+package asr
 
 import (
 	"bytes"
@@ -6,36 +7,32 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
-	config "yunyez/internal/common/config"
-)
-
-var (
-	once sync.Once
 )
 
 
-// ASR 语音识别接口
-type ASR interface {
+// Service 语音识别服务接口
+type Service interface {
 	// Transfer 语音识别 音频转换为文本
 	Transfer(ctx context.Context, data []byte) (string, error)
+}
+
+func NewASRClient(model, endpoint string) Service {
+	// 选择 ASR 模型
+	switch model {
+	case "local":
+		return &LocalASRClient{
+			Endpoint: endpoint,
+			client:   &http.Client{},
+		}
+	default:
+		panic(fmt.Sprintf("unknown ASR model: %s", model))
+	}
 }
 
 type LocalASRClient struct {
 	Endpoint string `json:"endpoint"` // ASR 服务地址
 	client   *http.Client // HTTP 客户端
 }
-
-func NewLocalASRClient() *LocalASRClient {
-	LocalASRClient := &LocalASRClient{}
-	once.Do(func(){
-		LocalASRClient.Endpoint = config.GetString("asr.endpoint")
-		LocalASRClient.client = &http.Client{}
-	})
-	
-	return LocalASRClient
-}
-
 
 // Transfer 语音识别 音频转换为文本 -- 本地模型
 // 参数：
