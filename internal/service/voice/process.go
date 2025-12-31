@@ -10,7 +10,7 @@ import (
 	logger "yunyez/internal/pkg/logger"
 	mqtt_constant "yunyez/internal/pkg/mqtt/common"
 	mqtt_voice "yunyez/internal/pkg/mqtt/protocol/voice"
-	nlu "yunyez/internal/pkg/nlu"
+	nlu "yunyez/internal/pkg/agent/nlu"
 )
 
 var (

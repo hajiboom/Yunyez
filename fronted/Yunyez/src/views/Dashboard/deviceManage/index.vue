@@ -15,12 +15,12 @@
         </template>
             </el-input>
            <el-table :data="deviceList" stripe style="width: 100%;">
-    <el-table-column prop=" sn" label="设备ID" width="180" />
-    <el-table-column prop=" deviceType" label="设备类型" width="180" />
+    <el-table-column prop="sn" label="设备序列号" width="180" />
+    <el-table-column prop="deviceType" label="设备类型" width="180" />
     <el-table-column prop="vendorName" label="供应商" width="180"/>
     <el-table-column prop="productModel" label="产品型号" width="180"/>
-    <el-table-column prop=" status" label="状态" width="180"/>
-    <el-table-column prop=" createTime" label="注册时间" width="180"/>
+    <el-table-column prop="status" label="状态" width="180"/>
+    <el-table-column prop="createTime" label="注册时间" width="180"/>
  <!-- 2. 操作列：通过作用域插槽获取当前行数据 -->
   <el-table-column label="操作" width="180">
     <!-- #default="scope" 是Element Plus的作用域插槽 -->

@@ -1,17 +1,24 @@
 import { defineConfig } from 'vite'
 import path from 'path'
 import vue from '@vitejs/plugin-vue'
+import dotenv from 'dotenv'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import { viteMockServe } from 'vite-plugin-mock' // 导入Mock插件
+
+
+dotenv.config({ path: '.env.development' })
+
+const baseURL = process.env.VITE_API_BASE_URL
+console.log('VITE_API_BASE_URL from env:', baseURL);
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue(),
 
 
-     AutoImport({
+    AutoImport({
       resolvers: [ElementPlusResolver()],
     }),
     Components({
@@ -30,7 +37,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: import.meta.env.VITE_API_BASE_URL,
+        target: baseURL,
         changeOrigin: true,
         // rewrite: (path) => `/api${path}`, // 给路径开头加 /api
       },
