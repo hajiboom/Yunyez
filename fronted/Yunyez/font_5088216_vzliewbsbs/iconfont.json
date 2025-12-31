@@ -1,0 +1,51 @@
+{
+  "id": "5088216",
+  "name": "yunyez",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "2076271",
+      "name": "退出",
+      "font_class": "tuichu",
+      "unicode": "e892",
+      "unicode_decimal": 59538
+    },
+    {
+      "icon_id": "630128",
+      "name": "照相机",
+      "font_class": "zhaoxiangji",
+      "unicode": "e663",
+      "unicode_decimal": 58979
+    },
+    {
+      "icon_id": "666888",
+      "name": "手机",
+      "font_class": "shouji",
+      "unicode": "e692",
+      "unicode_decimal": 59026
+    },
+    {
+      "icon_id": "3522453",
+      "name": "总览",
+      "font_class": "zonglan",
+      "unicode": "e608",
+      "unicode_decimal": 58888
+    },
+    {
+      "icon_id": "3640135",
+      "name": "语音",
+      "font_class": "yuyin",
+      "unicode": "e8f7",
+      "unicode_decimal": 59639
+    },
+    {
+      "icon_id": "11532042",
+      "name": "机器人俯视",
+      "font_class": "jiqirenfushi",
+      "unicode": "e623",
+      "unicode_decimal": 58915
+    }
+  ]
+}

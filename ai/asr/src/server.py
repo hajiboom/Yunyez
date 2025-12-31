@@ -1,6 +1,14 @@
 ## 语音识别服务
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 from fastapi import FastAPI, File, UploadFile, HTTPException, Request
+=======
+from fastapi import FastAPI, File, UploadFile, HTTPException
+>>>>>>> 2126392 (fix(mqtt):fix the mqtt client)
+=======
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request
+>>>>>>> 8991205 (feat(voice-asr):调通mqtt->go->asr->nlu的链路)
 from .engine import asr_engine
 import uvicorn
 import tempfile
@@ -9,6 +17,10 @@ import os
 
 app = FastAPI(title="Yunyez ASR Service")
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 8991205 (feat(voice-asr):调通mqtt->go->asr->nlu的链路)
 @app.post("/asr")
 async def transcribe(request: Request):
     """
@@ -61,6 +73,13 @@ async def transcribe_test(audio: UploadFile = File(...)):
     :return: 包含识别文本的 JSON 响应
     :rtype: dict
     """
+<<<<<<< HEAD
+=======
+@app.post("/v1/transcribe")
+async def transcribe(audio: UploadFile = File(...)):
+>>>>>>> 2126392 (fix(mqtt):fix the mqtt client)
+=======
+>>>>>>> 8991205 (feat(voice-asr):调通mqtt->go->asr->nlu的链路)
     if not audio.filename.endswith(('.wav', '.mp3', '.pcm')):
         raise HTTPException(status_code=400, detail="Only WAV/MP3/PCM supported")
     
@@ -78,4 +97,12 @@ async def transcribe_test(audio: UploadFile = File(...)):
         os.unlink(tmp_path)
 
 if __name__ == "__main__":
+<<<<<<< HEAD
+<<<<<<< HEAD
     uvicorn.run(app, host="127.0.0.1", port=8002)
+=======
+    uvicorn.run(app, host="0.0.0.0", port=8002)
+>>>>>>> 2126392 (fix(mqtt):fix the mqtt client)
+=======
+    uvicorn.run(app, host="127.0.0.1", port=8002)
+>>>>>>> 8991205 (feat(voice-asr):调通mqtt->go->asr->nlu的链路)
