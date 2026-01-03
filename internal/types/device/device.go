@@ -32,17 +32,17 @@ func GetDeviceStatus(status int) string {
 
 // DeviceListRequest 获取设备列表请求参数
 type DeviceListRequest struct {
-	Page types.Page `json:",inline"`
-	VendorName string `json:"vendorName,omitempty" default:""`
-	DeviceType string `json:"deviceType,omitempty" default:""`
-	Status int `json:"status,omitempty" oneof:"-1 1 2 3 4" default:"-1"`
+	Page types.Page `form:",inline"`
+	VendorName string `form:"vendorName,omitempty" default:""`
+	DeviceType string `form:"deviceType,omitempty" default:""`
+	Status int `form:"status,omitempty" oneof:"-1 1 2" default:"-1"`
 }
 
 // DeviceListResponse 获取设备列表响应参数
 type DeviceListResponse struct {
 	Page types.Page `json:"page,inline"`
 	Total int `json:"total"`
-	Devices []*DeviceListItem `json:"devices"` // 设备列表元信息 - pure
+	List []*DeviceListItem `json:"list"` // 设备列表元信息 - pure
 }
 
 // DeviceDetailResponse 获取设备详情响应参数

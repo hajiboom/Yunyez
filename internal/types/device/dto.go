@@ -4,7 +4,6 @@ import "time"
 
 // DeviceListItem 设备列表项（精简版）
 type DeviceListItem struct {
-	ID           int64     `json:"id"`
 	SN           string    `json:"sn"`
 	DeviceType   string    `json:"deviceType"`
 	VendorName   string    `json:"vendorName"`
