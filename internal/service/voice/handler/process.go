@@ -49,23 +49,13 @@ func ProcessFull(ctx context.Context, clientID string, header *mqtt_voice.Header
 	}
 
 	// 音频处理
-	audio, err := ChatPipeline(ctx, clientID, payload)
+	err = ChatPipeline(ctx, clientID, payload)
 	if err != nil {
 		logger.Error(ctx, "chat pipeline failed", map[string]any{
 			"error": err.Error(),
 			"path":  audioPath,
 		})
 		return fmt.Errorf("chat pipeline failed: %w", err)
-	}
-
-	// TODO: 发布音频响应消息到 MQTT 主题
-	err = Publish(ctx, clientID, audio)
-	if err != nil {
-		logger.Error(ctx, "publish audio failed", map[string]any{
-			"error": err.Error(),
-			"path":  audioPath,
-		})
-		return fmt.Errorf("publish audio failed: %w", err)
 	}
 
 	return nil
