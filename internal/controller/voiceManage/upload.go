@@ -1,4 +1,5 @@
-package voice_manage
+// Package voicemanager 语音管理
+package voicemanager
 
 import (
 	"fmt"
@@ -9,7 +10,7 @@ import (
 
 	"yunyez/internal/pkg/logger"
 	mqtt_common "yunyez/internal/pkg/mqtt/common"
-	voiceService "yunyez/internal/service/voice"
+	voice_fragment "yunyez/internal/service/voice/fragment"
 	mqtt_voice "yunyez/internal/pkg/mqtt/protocol/voice"
 )
 
@@ -47,8 +48,8 @@ func UploadVoice(c *gin.Context) {
 	// 音频数据处理
 	switch header.F {
 	case mqtt_common.VoiceFrameFull: // 完整帧
-		if err := voiceService.ProcessFull(c.Request.Context(), c.GetHeader("ClientID"), &header, body[mqtt_voice.HeaderSize:]); err != nil {
-			logger.Error(c.Request.Context(), "voiceService.ProcessFull failed", map[string]any{
+		if err := voice_fragment.ProcessFull(c.Request.Context(), c.GetHeader("ClientID"), &header, body[mqtt_voice.HeaderSize:]); err != nil {
+			logger.Error(c.Request.Context(), "voice_fragment.ProcessFull failed", map[string]any{
 				"error": err.Error(),
 				"topic": c.GetHeader("Topic"),
 				"payload_len": len(body[mqtt_voice.HeaderSize:]),
@@ -56,9 +57,11 @@ func UploadVoice(c *gin.Context) {
 			})
 			return
 		}
+
+		
 	case mqtt_common.VoiceFrameFragment, mqtt_common.VoiceFrameLast: // 分片帧, 最后一帧
-		if err := voiceService.ProcessFragment(c.Request.Context(), c.GetHeader("ClientID"), &header, body[mqtt_voice.HeaderSize:]); err != nil {
-			logger.Error(c.Request.Context(), "voiceService.ProcessFragment failed", map[string]any{
+		if err := voice_fragment.ProcessFragment(c.Request.Context(), c.GetHeader("ClientID"), &header, body[mqtt_voice.HeaderSize:]); err != nil {
+			logger.Error(c.Request.Context(), "voice_fragment.ProcessFragment failed", map[string]any{
 				"error": err.Error(),
 				"topic": c.GetHeader("Topic"),
 				"payload_len": len(body[mqtt_voice.HeaderSize:]),

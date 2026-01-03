@@ -18,3 +18,8 @@ __pycache__/
 *.pyc
 *.pyo
 
+# 配置文件
+configs/**/ai.yaml
+
+# 脚本文件
+example/scripts/bash.sh

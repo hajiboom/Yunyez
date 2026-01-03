@@ -1,3 +1,4 @@
+// Package handler 消息处理策略
 package handler
 
 import (
@@ -11,7 +12,7 @@ import (
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
 
-// MQTT消息 转发结构体
+// Message MQTT消息 转发结构体
 type Message struct {
 	Topic       string `json:"topic"`       // topic
 	CommandType string `json:"commandType"` // 命令类型
@@ -21,12 +22,11 @@ type Message struct {
 
 }
 
-// MQTT 消息处理策略
+// Strategy MQTT 消息处理策略
 type Strategy interface {
 	Send(ctx context.Context, msg *Message)
 }
 
-// -----------------------------------------------------------
 // SendHandler 消息转发处理结构体
 type SendHandler struct {
 	Sender Strategy

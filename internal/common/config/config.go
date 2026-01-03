@@ -40,6 +40,7 @@ var (
 		"database.yaml", // 数据库配置文件
 		"mqtt.yaml",     // MQTT 配置文件
 		"default.yaml",  // 通用配置文件
+		"ai.yaml",       // AI 配置文件
 	}
 )
 
@@ -158,7 +159,6 @@ func GetViperInstance() *viper.Viper {
 // ================================================================
 // 获取配置值相关函数
 
-
 // GetString 获取字符串配置值
 func GetString(key string) string {
 	return getViper().GetString(key)
@@ -181,6 +181,20 @@ func GetInt(key string) int {
 // GetIntWithDefault 获取整数配置值，若为空则返回默认值
 func GetIntWithDefault(key string, defaultValue int) int {
 	val := getViper().GetInt(key)
+	if val == 0 {
+		return defaultValue
+	}
+	return val
+}
+
+// GetFloat64 get float64 config value
+func GetFloat64(key string) float64 {
+	return getViper().GetFloat64(key)
+}
+
+// GetFloat64WithDefault get float64 config value with default value
+func GetFloat64WithDefault(key string, defaultValue float64) float64 {
+	val := getViper().GetFloat64(key)
 	if val == 0 {
 		return defaultValue
 	}
