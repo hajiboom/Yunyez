@@ -2,9 +2,11 @@
 package tts
 
 import (
+	"context"
 	"fmt"
 	"yunyez/internal/common/config"
 	"yunyez/internal/common/constant"
+	"yunyez/internal/pkg/logger"
 )
 
 // NewTTSClientFromConfig creates a new TTS client based on the configuration.
@@ -34,8 +36,15 @@ func NewTTSClientFromConfig(configReader ConfigReader) (Service, error) {
 }
 
 // NewTTSClient creates a new TTS client based on the global configuration.
-func NewTTSClient() (Service, error) {
-	return NewTTSClientFromConfig(&globalConfig{})
+func NewTTSClient() Service {
+	service, err := NewTTSClientFromConfig(&globalConfig{})
+	if err != nil {
+		logger.Error(context.Background(), "tts.NewTTSClientFromConfig failed", map[string]any{
+			"error": err.Error(),
+		})
+		return nil
+	}
+	return service
 }
 
 

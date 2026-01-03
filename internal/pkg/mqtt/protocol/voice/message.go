@@ -13,8 +13,8 @@ var (
 	crc16Table = crc16.MakeTable(crc16.CRC16_MAXIM)
 )
 
-// Message 音频消息属性
-type Message struct {
+// AudioConfig 音频消息属性
+type AudioConfig struct {
 	AudioSampleRate uint16 // 音频采样率
 	AudioChannel    uint8  // 音频通道数
 	AudioFormat     uint8  // 音频格式
@@ -29,7 +29,7 @@ type Message struct {
 //
 // 返回值:
 //   - []byte: 包含协议头的音频消息 payload
-func BuildPayload(seq uint16, data []byte, frameType uint8, config Message) []byte {
+func BuildPayload(seq uint16, data []byte, frameType uint8, config AudioConfig) []byte {
 	header := &Header{
 		Version:     mqtt_common.VoiceVersion,
 		AudioFormat: config.AudioFormat,
@@ -64,7 +64,7 @@ func BuildPayload(seq uint16, data []byte, frameType uint8, config Message) []by
 //
 // 返回值:
 //   - []byte: 包含协议头的完整音频消息 payload
-func BuildFullPayload(seq uint16, data []byte, config Message) []byte {
+func BuildFullPayload(seq uint16, data []byte, config AudioConfig) []byte {
 	return BuildPayload(seq, data, mqtt_common.VoiceFrameFull, config)
 }
 
@@ -77,7 +77,7 @@ func BuildFullPayload(seq uint16, data []byte, config Message) []byte {
 //
 // 返回值:
 //   - []byte: 包含协议头的流式音频消息 payload
-func BuildStreamPayload(seq uint16, data []byte, config Message, isLast bool) []byte {
+func BuildStreamPayload(seq uint16, data []byte, config AudioConfig, isLast bool) []byte {
 	frameType := mqtt_common.VoiceFrameFragment
 	if isLast {
 		frameType = mqtt_common.VoiceFrameLast

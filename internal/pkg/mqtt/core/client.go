@@ -51,7 +51,7 @@ func Init(ctx context.Context, topic Topic) *Client {
 //
 // 返回值:
 //   - error: 错误信息
-func (c *Client) Publish(ctx context.Context, data []byte, audioConfig voice.Message) error {
+func (c *Client) Publish(ctx context.Context, data []byte, audioConfig voice.AudioConfig) error {
 	if c.Client == nil {
 		logger.Error(ctx, "mqtt.client not init", map[string]interface{}{
 			"topic": c.Topic.String(),
@@ -90,7 +90,7 @@ func (c *Client) Publish(ctx context.Context, data []byte, audioConfig voice.Mes
 //
 // 返回值:
 //   - error: 错误信息
-func (c Client) PublishStream(ctx context.Context, seq uint16, data []byte, audioConfig voice.Message, isLast bool) error {
+func (c Client) PublishStream(ctx context.Context, seq uint16, data []byte, audioConfig voice.AudioConfig, isLast bool) error {
 	if c.Client == nil {
 		logger.Error(ctx, "mqtt.client not init", map[string]interface{}{
 			"topic": c.Topic.String(),
