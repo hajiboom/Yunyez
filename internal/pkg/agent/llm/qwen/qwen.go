@@ -250,7 +250,7 @@ func handleQwenChatStreamResponse(ctx context.Context, resp *http.Response, res 
 		content := chunk.Choices[0].Delta.Content
 		if content != "" {
 			select {
-			case res <- content: // 发送内容到通道
+			case res <- content: // 仅发送文本内容到通道
 			case <-ctx.Done():
 				return ctx.Err()
 			}

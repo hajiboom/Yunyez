@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
-<<<<<<< HEAD
 # 复制 requirements first to leverage Docker cache
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -16,20 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 复制代码
 COPY . .
 
-=======
-# 复制代码
-COPY . .
-
-# 安装 Python 依赖
-RUN pip install --no-cache-dir -r requirements.txt
-
->>>>>>> 2126392 (fix(mqtt):fix the mqtt client)
 # 暴露端口
 EXPOSE 8002
 
 # 启动命令
-<<<<<<< HEAD
 CMD ["python", "-m", "uvicorn", "src.server:app", "--host", "0.0.0.0", "--port", "8002"]
-=======
-CMD ["python", "server.py"]
->>>>>>> 2126392 (fix(mqtt):fix the mqtt client)

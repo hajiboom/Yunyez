@@ -1,5 +1,5 @@
+// Package core provides the core functionality for MQTT client
 // MQTTClient is a wrapper for MQTT client
-// It provides a simple interface to publish messages to MQTT broker
 package core
 
 import (
@@ -43,6 +43,19 @@ func Init(ctx context.Context, topic Topic) *Client {
 	return &client
 }
 
+// GetMQTTClient 获取MQTT客户端结构体
+// 参数:
+//   - ctx: 上下文
+//   - topic: 主题
+// 返回值:
+//   - Client: 自定义的 MQTT 客户端
+//   - error: 错误信息
+func GetMQTTClient(ctx context.Context, topic Topic) (Client, error) {
+	client := Init(ctx, topic)
+	client.Client = MqttClient
+	return *client, nil
+}
+
 // Publish 发送消息到指定topic
 // 参数:
 //   - ctx: 上下文
@@ -51,7 +64,7 @@ func Init(ctx context.Context, topic Topic) *Client {
 //
 // 返回值:
 //   - error: 错误信息
-func (c *Client) Publish(ctx context.Context, data []byte, audioConfig voice.Message) error {
+func (c *Client) Publish(ctx context.Context, data []byte, audioConfig voice.AudioConfig) error {
 	if c.Client == nil {
 		logger.Error(ctx, "mqtt.client not init", map[string]interface{}{
 			"topic": c.Topic.String(),
@@ -90,7 +103,7 @@ func (c *Client) Publish(ctx context.Context, data []byte, audioConfig voice.Mes
 //
 // 返回值:
 //   - error: 错误信息
-func (c Client) PublishStream(ctx context.Context, seq uint16, data []byte, audioConfig voice.Message, isLast bool) error {
+func (c Client) PublishStream(ctx context.Context, seq uint16, data []byte, audioConfig voice.AudioConfig, isLast bool) error {
 	if c.Client == nil {
 		logger.Error(ctx, "mqtt.client not init", map[string]interface{}{
 			"topic": c.Topic.String(),
@@ -123,11 +136,7 @@ func (c Client) PublishStream(ctx context.Context, seq uint16, data []byte, audi
 
 // send 实际发送函数
 // 内部调用mqtt客户端的Publish方法
-func send(ctx context.Context,
-	client paho.Client,
-	topic Topic,
-	qos byte,
-	data []byte) error {
+func send(ctx context.Context, client paho.Client, topic Topic, qos byte, data []byte) error {
 
 	topicStr := topic.String()
 	token := client.Publish(topicStr, qos, false, data)
