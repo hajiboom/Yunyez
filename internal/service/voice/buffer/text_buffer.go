@@ -3,15 +3,16 @@
 package buffer
 
 import (
-	"regexp"
 	"strings"
 	"time"
+	"unicode"
 )
 
 
 var (
-	sentenceEnd = regexp.MustCompile(`[。！？.!?;；…]`)
-	textMaxLength = 50 // the max length of text
+	punctuation = "。！？；;,.!?，：:、\n\t"
+	textMaxLength = 45 // the max length of text
+	textMinLength = 12 // the min length of text
 	// the delay time to flush the text buffer while no punctuation received
 	flushDelay = 600 * time.Millisecond 
 )
@@ -56,26 +57,38 @@ func (tb *TextBuffer) run() {
 			}
 
 			buffer.WriteString(part)
-
 			text := buffer.String()
-			// rule 1: split the text by sentence end
-			if sentenceEnd.MatchString(part) {
-				lastEnd := sentenceEnd.FindAllStringIndex(text, -1)
-				if len(lastEnd) > 0 {
-					endPos := lastEnd[len(lastEnd)-1][1]
-					sentence := strings.TrimSpace(text[:endPos])
+
+			// rule 1: try to find the safe-split position, if the length is greater than min length
+			if len(text) >= textMinLength {
+				pos := -1
+				runes := []rune(text)
+				start := len(runes) - 1
+				end := len(runes)
+				if end - start > 10 {
+					start = end - 10
+				}
+
+				for i := end -1; i >= start; i-- {
+					if safeBreakPosition(runes[i]) {
+						pos = i + 1 // the next position after the break position
+						break
+					}
+				}
+
+				if pos > 0 && pos < len(runes) {
+					// find out the safe break position but not all text
+					sentence := strings.TrimSpace(string(runes[:pos]))
 					if sentence != "" {
 						tb.output <- sentence
-					}
-					// 保留剩余部分
-					buffer.Reset()
-					remaining := text[endPos:]
-					if remaining != "" {
-						buffer.WriteString(remaining)
+						buffer.Reset() // save the rest partition
+						buffer.WriteString(string(runes[pos:]))
+						continue
 					}
 				}
 			}
-			// rule 2: beyond the max length
+			// rule 2: strictly splitting the partition beyond the max length
+			//  although it's not a safe break position
 			if buffer.Len() > textMaxLength {
 				tb.output <- buffer.String()
 				buffer.Reset()
@@ -90,11 +103,32 @@ func (tb *TextBuffer) run() {
 			timer.Reset(flushDelay)
 		
 		case <-timer.C: // timeout: flush current text although it's patchy
-			if buffer.Len() > 0 {
+			if buffer.Len() >= 8 {
 				tb.output <- buffer.String()
 				buffer.Reset()
 			}
 			timer.Reset(flushDelay)
 		}
 	}
+}
+
+// safeBreakPosition checks if the position is a safe break position
+// params:
+// - r: the rune to check
+// return: 
+// - bool: true if the position is a safe break position
+func safeBreakPosition(r rune) bool {
+	// chinese character / punctuation / space
+	if unicode.Is(unicode.Han, r) {
+		return true
+	}
+	if strings.ContainsRune(punctuation, r) {
+		return true
+	}
+	if unicode.IsSpace(r) {
+		return true
+	}
+
+	return false
+
 }

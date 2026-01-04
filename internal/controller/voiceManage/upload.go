@@ -42,10 +42,12 @@ func UploadVoice(c *gin.Context) {
 		})
 		return
 	}
+
+	clientID := c.GetHeader("ClientID")
 	// 音频数据处理
 	switch header.F {
 	case mqttCommon.VoiceFrameFull: // 完整帧
-		if err := voiceHandler.ProcessFull(c.Request.Context(), c.GetHeader("ClientID"), &header, body[mqttVoice.HeaderSize:]); err != nil {
+		if err := voiceHandler.ProcessFull(c.Request.Context(), clientID, &header, body[mqttVoice.HeaderSize:]); err != nil {
 			logger.Error(c.Request.Context(), "voiceHandler.ProcessFull failed", map[string]any{
 				"error": err.Error(),
 				"topic": c.GetHeader("Topic"),
@@ -55,7 +57,7 @@ func UploadVoice(c *gin.Context) {
 			return
 		}
 	case mqttCommon.VoiceFrameFragment, mqttCommon.VoiceFrameLast: // 分片帧, 最后一帧
-		if err := voiceHandler.ProcessFragment(c.Request.Context(), c.GetHeader("ClientID"), &header, body[mqttVoice.HeaderSize:]); err != nil {
+		if err := voiceHandler.ProcessFragment(c.Request.Context(), clientID, &header, body[mqttVoice.HeaderSize:]); err != nil {
 			logger.Error(c.Request.Context(), "voiceHandler.ProcessFragment failed", map[string]any{
 				"error": err.Error(),
 				"topic": c.GetHeader("Topic"),

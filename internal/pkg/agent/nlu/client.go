@@ -8,13 +8,11 @@ import (
 	"net/http"
 	"sync"
 	"time"
-	config "yunyez/internal/common/config"
 )
 
 var (
-	NRLAddress = config.GetString("nlu.endpoint")
 	once sync.Once
-	NLUClient *Client
+	NLUClient Client
 )
 
 // Input 意图原始输入
@@ -41,10 +39,10 @@ type Client struct {
 	Endpoint string `json:"endpoint"` // NLU 服务地址
 }
 
-func NewClient() *Client {
+func NewClient(endpoint string) Client {
 	once.Do(func() {
-		NLUClient = &Client{
-			Endpoint: NRLAddress,
+		NLUClient = Client{
+			Endpoint: endpoint,
 		}
 	})
 	return NLUClient

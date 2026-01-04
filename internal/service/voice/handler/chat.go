@@ -10,14 +10,23 @@ package handler
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"sync/atomic"
+	"time"
 	config "yunyez/internal/common/config"
 	constant "yunyez/internal/common/constant"
+	"yunyez/internal/common/tools"
 	asr "yunyez/internal/pkg/agent/asr"
 	llm "yunyez/internal/pkg/agent/llm"
 	nlu "yunyez/internal/pkg/agent/nlu"
 	tts "yunyez/internal/pkg/agent/tts"
 	logger "yunyez/internal/pkg/logger"
+	mqttCommon "yunyez/internal/pkg/mqtt/common"
+	mqttCore "yunyez/internal/pkg/mqtt/core"
 	buffer "yunyez/internal/service/voice/buffer"
+
+	voice "yunyez/internal/pkg/mqtt/protocol/voice"
 )
 
 var (
@@ -27,18 +36,21 @@ var (
 	ttsModel  = config.GetString("tts.model")   // default tts model
 
 	asrEndpoint = config.GetString("asr.endpoint") // default asr endpoint
+	nluEndpoint = config.GetString("nlu.endpoint") // default nlu endpoint
 
 	agentStrategy *llm.Strategy // llm model strategy
 
 	asrClient asr.Service
 	nluClient nlu.Client
 	ttsClient tts.Service
+
+	publishCounter uint64 // TODO: 测试暂存序列号 记得移除
 )
 
 func init() {
 	// 初始化智能体模型
-
 	asrClient = asr.NewASRClient(asrModel, asrEndpoint) // init asr client
+	nluClient = nlu.NewClient(nluEndpoint)              // init nlu client
 
 	agentStrategy = &llm.Strategy{}
 	agentStrategy.SetAgent(chatModel)
@@ -87,6 +99,14 @@ func ChatPipeline(ctx context.Context, clientID string, message []byte) error {
 		return err
 	}
 
+	// @dev print
+	logger.Info(ctx, ">>>>>>> intent result", map[string]any{
+		"text":              text,
+		"intent":            intent.Intent,
+		"intent_confidence": intent.Confidence,
+		"intent_is_command": intent.IsCommand,
+	})
+
 	// judge intent from input text
 	if intent.Intent != constant.IntentChitChat {
 		// special intent command
@@ -115,7 +135,7 @@ func ChatPipeline(ctx context.Context, clientID string, message []byte) error {
 		})
 		return err
 	}
-	// merge the replyChan to text buffer
+	// merge the token text from replyChan to text buffer
 	textBuffer := buffer.NewTextBuffer(replyChan)
 	// generate audio by every sentence
 	for sentence := range textBuffer.Output() {
@@ -123,9 +143,9 @@ func ChatPipeline(ctx context.Context, clientID string, message []byte) error {
 		audio, err := ttsClient.Synthesize(ctx, sentence)
 		if err != nil {
 			logger.Error(ctx, "tts service failed", map[string]any{
-				"error":    err.Error(),
-				"clientID": clientID,
-				"sentence": sentence,
+				"error":      err.Error(),
+				"clientID":   clientID,
+				"sentence":   sentence,
 				"audio_size": len(audio),
 			})
 			continue
@@ -140,12 +160,12 @@ func ChatPipeline(ctx context.Context, clientID string, message []byte) error {
 			})
 			return err
 		}
+
+		fmt.Printf("sentence: %s\n", sentence)
 	}
 
 	return nil
 }
-
-
 
 func SpecialAction(ctx context.Context, clientID string, intent *nlu.Intent) error {
 	if intent == nil {
@@ -178,6 +198,72 @@ func SpecialAction(ctx context.Context, clientID string, intent *nlu.Intent) err
 // Returns:
 //   - error: the error object if the publish failed
 func Publish(ctx context.Context, clientID string, payload []byte) error {
+	// TODO 移除
+	// @dev 暂存到./storage/tmp/audio/<clientID>/<timestamp>.wav
+	rootDir := tools.GetRootDir()
+	audioDir := filepath.Join(rootDir, "storage", "tmp", "audio", clientID)
+	if err := os.MkdirAll(audioDir, 0755); err != nil {
+		logger.Error(ctx, "failed to create audio dir", map[string]any{
+			"dir":   audioDir,
+			"error": err.Error(),
+		})
+		return err
+	}
+	filename := fmt.Sprintf("%d_%04d.wav", time.Now().UnixNano(), atomic.AddUint64(&publishCounter, 1))
+	fullPath := filepath.Join(audioDir, filename)
+
+	if err := os.WriteFile(fullPath, payload, 0644); err != nil {
+		logger.Error(ctx, "failed to save audio file", map[string]any{
+			"path":  fullPath,
+			"error": err.Error(),
+		})
+		return err
+	}
+
+	logger.Info(ctx, "audio saved", map[string]any{
+		"path":       fullPath,
+		"size_bytes": len(payload),
+		"client_id":  clientID,
+	})
+
 	// TODO 发布MQTT消息
+	// TODO 开发测试目前先保留配置参数硬编码，记得移除
+	// test topic：test/T0001/A0001/voice/client
+	topic := mqttCore.Topic{ // TODO: get from device registry
+		Vendor:      constant.VendorTest,
+		DeviceType:  "T0001",
+		DeviceSN:    clientID,
+		CommandType: "voice",
+		Flag:        "client",
+	}
+	mqtt, err := mqttCore.GetMQTTClient(ctx, topic)
+	if err != nil {
+		logger.Error(ctx, "failed to get mqtt client", map[string]any{
+			"clientID": clientID,
+			"error":    err.Error(),
+		})
+		return err
+	}
+
+	audioConfig := voice.AudioConfig{
+		AudioFormat:     mqttCommon.VoiceAudioFormatWav, 
+		AudioSampleRate: 16000, // TODO: get from constant
+		AudioChannel:    1,
+	}
+
+	logger.Info(ctx, "publish audio config", map[string]any{
+		"topic": topic.String(),
+		"audio_config": audioConfig,
+	})
+
+	err = mqtt.Publish(ctx, payload, audioConfig)
+	if err != nil {
+		logger.Error(ctx, "failed to publish audio stream", map[string]any{
+			"clientID": clientID,
+			"error":    err.Error(),
+		})
+		return err
+	}
+
 	return nil
 }
