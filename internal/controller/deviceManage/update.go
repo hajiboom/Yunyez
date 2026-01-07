@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// UpdateDeviceInfo 更新设备信息
 // @Summary 更新设备信息
 // @Description 更新指定设备的信息
 // @Tags 设备管理

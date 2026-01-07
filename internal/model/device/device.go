@@ -1,3 +1,4 @@
+// Package device device model
 package device
 
 import (

@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// DeleteDevice 删除设备
 // @Summary 删除设备
 // @Description 删除指定设备
 // @Tags 设备管理

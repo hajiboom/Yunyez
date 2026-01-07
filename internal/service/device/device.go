@@ -1,3 +1,4 @@
+// Package device device service
 package device
 
 import (
@@ -22,7 +23,11 @@ var (
 
 func init() {
 	// Initialize the service instance with a default DBProvider.
-	ServiceInstance = &service{provider: &PostgreClient{Client: postgre.GetClient()}}
+	ServiceInstance = &service{
+		provider: &PostgreClient{
+			Client: postgre.GetClient(),
+		},
+	}
 }
 
 // Service defines the device business logic interface.
