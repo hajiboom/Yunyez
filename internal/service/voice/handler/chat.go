@@ -16,23 +16,23 @@ import (
 	"time"
 	config "yunyez/internal/common/config"
 	constant "yunyez/internal/common/constant"
-	"yunyez/internal/common/tools"
+	tools "yunyez/internal/common/tools"
 	asr "yunyez/internal/pkg/agent/asr"
 	llm "yunyez/internal/pkg/agent/llm"
+	metering "yunyez/internal/pkg/agent/metering"
 	nlu "yunyez/internal/pkg/agent/nlu"
 	tts "yunyez/internal/pkg/agent/tts"
 	logger "yunyez/internal/pkg/logger"
 	mqttCommon "yunyez/internal/pkg/mqtt/common"
 	mqttCore "yunyez/internal/pkg/mqtt/core"
-	buffer "yunyez/internal/service/voice/buffer"
-
 	voice "yunyez/internal/pkg/mqtt/protocol/voice"
+	buffer "yunyez/internal/service/voice/buffer"
 )
 
 var (
 	asrModel  = config.GetString("asr.model")   // default asr model
 	nluModel  = config.GetString("nlu.model")   // default nlu model
-	chatModel = config.GetString("agent.model") // default chat model
+	chatModel = config.GetString("agent.model") // default chat model： qwen
 	ttsModel  = config.GetString("tts.model")   // default tts model
 
 	asrEndpoint = config.GetString("asr.endpoint") // default asr endpoint
@@ -47,6 +47,19 @@ var (
 	publishCounter uint64 // TODO: 测试暂存序列号 记得移除
 )
 
+// 第三方api成本计算
+var (
+	model = config.GetString(fmt.Sprintf("%s.model", chatModel)) // qwen-flash
+	rules = map[string]metering.PricingRule{
+		model: {
+			InputPrice:  config.GetFloat64WithDefault("pricing.models.qwen-flash.input_price", 0.001),
+			OutputPrice: config.GetFloat64WithDefault("pricing.models.qwen-flash.output_price", 0.002),
+			Currency:    config.GetStringWithDefault("pricing.models.qwen-flash.currency", "CNY"),
+		},
+	}
+	meteringService *metering.MeteringService // metering service
+)
+
 func init() {
 	// 初始化智能体模型
 	asrClient = asr.NewASRClient(asrModel, asrEndpoint) // init asr client
@@ -56,6 +69,8 @@ func init() {
 	agentStrategy.SetAgent(chatModel)
 
 	ttsClient = tts.NewTTSClient() // init tts client
+	// init metering service
+	meteringService = metering.Initialize(rules)
 }
 
 // ChatPipeline response the natural language conversation response
@@ -64,6 +79,7 @@ func init() {
 // 2. nlu: understand the text message to intent and entities
 // 3. chat: call the llm model to chat
 // 4. tts: generate the audio data from the chat response by tts
+// 5. record: record the cost into metering repository if exists
 // Parameters:
 //   - ctx: the context.Context object
 //   - clientID: the device sequence number to generate the MQTT topic
@@ -99,14 +115,6 @@ func ChatPipeline(ctx context.Context, clientID string, message []byte) error {
 		return err
 	}
 
-	// @dev print
-	logger.Info(ctx, ">>>>>>> intent result", map[string]any{
-		"text":              text,
-		"intent":            intent.Intent,
-		"intent_confidence": intent.Confidence,
-		"intent_is_command": intent.IsCommand,
-	})
-
 	// judge intent from input text
 	if intent.Intent != constant.IntentChitChat {
 		// special intent command
@@ -126,7 +134,7 @@ func ChatPipeline(ctx context.Context, clientID string, message []byte) error {
 	}
 
 	// chat -- call the llm model to response in streaming
-	replyChan, err := agentStrategy.Model.Chat(ctx, text)
+	replyChan, usageChan, err := agentStrategy.Model.Chat(ctx, clientID, text)
 	if err != nil {
 		logger.Error(ctx, "llm service failed", map[string]any{
 			"error":    err.Error(),
@@ -135,6 +143,7 @@ func ChatPipeline(ctx context.Context, clientID string, message []byte) error {
 		})
 		return err
 	}
+
 	// merge the token text from replyChan to text buffer
 	textBuffer := buffer.NewTextBuffer(replyChan)
 	// generate audio by every sentence
@@ -163,6 +172,44 @@ func ChatPipeline(ctx context.Context, clientID string, message []byte) error {
 
 		fmt.Printf("sentence: %s\n", sentence)
 	}
+
+	// record usage
+	go func() {
+		bgCtx := context.Background()
+		tid := tools.GetTraceID(ctx)
+		if tid != "" {
+			bgCtx = tools.WithTraceID(bgCtx, tid)
+		}
+
+		select {
+		case u, ok := <-usageChan:
+			if !ok {
+				logger.Info(bgCtx, "llm usage closed", map[string]any{
+					"clientID": clientID,
+				})
+				return
+			}
+			logger.Info(bgCtx, "llm usage", map[string]any{
+				"clientID": clientID,
+				"usage":    u,
+			})
+
+			// record into metering repository
+			err = meteringService.Record(bgCtx, clientID, *u)
+			if err != nil {
+				logger.Error(bgCtx, "metering record failed", map[string]any{
+					"error":    err.Error(),
+					"clientID": clientID,
+					"usage":    u,
+				})
+			}
+
+		case <-time.After(10 * time.Second): // ⏱️ 超时兜底
+			logger.Warn(bgCtx, "timeout waiting for LLM usage data", map[string]any{
+				"clientID": clientID,
+			})
+		}
+	}()
 
 	return nil
 }
@@ -246,13 +293,13 @@ func Publish(ctx context.Context, clientID string, payload []byte) error {
 	}
 
 	audioConfig := voice.AudioConfig{
-		AudioFormat:     mqttCommon.VoiceAudioFormatWav, 
+		AudioFormat:     mqttCommon.VoiceAudioFormatWav,
 		AudioSampleRate: 16000, // TODO: get from constant
 		AudioChannel:    1,
 	}
 
 	logger.Info(ctx, "publish audio config", map[string]any{
-		"topic": topic.String(),
+		"topic":        topic.String(),
 		"audio_config": audioConfig,
 	})
 

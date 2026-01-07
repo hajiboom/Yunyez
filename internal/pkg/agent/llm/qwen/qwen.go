@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 	"yunyez/internal/common/config"
+	"yunyez/internal/pkg/agent/metering"
 	"yunyez/internal/pkg/logger"
 )
 
@@ -23,22 +24,28 @@ var (
 	BaseURL   = config.GetString("qwen.endpoint")
 	APIKey    = config.GetString("qwen.api_key")
 
-	systemDesc = config.GetString("qwen.systemDesc")	
-	role   = config.GetString("qwen.params.role")
-	stream = config.GetBool("qwen.params.stream")
+	systemDesc = config.GetString("qwen.systemDesc")
+	role       = config.GetString("qwen.params.role")
+	stream     = config.GetBool("qwen.params.stream")
 
 	timeout = 10 * time.Second
 	size    = 10 // 响应通道缓冲区大小
 )
 
+const (
+	DoneChunk = "data: [DONE]" // 流式返回结束chunk e.g. data: [DONE]
+)
+
 // QwenChat 调用 Qwen 模型并返回响应通道（支持流式/非流式）
 // 参数：
 // - ctx context.Context: 上下文
+// - clientID string: 客户端ID
 // - message string: 对话内容
 // 返回值：
 // - <-chan string: 流式响应通道-只读（每个元素为一个片段）
+// - <-chan *metering.Usage: 流式调用成本通道-只读（每个元素为一个调用成本, 每次只发送一个）
 // - error: 错误信息
-func QwenChat(ctx context.Context, message string) (<-chan string, error) {
+func QwenChat(ctx context.Context, clientID, message string) (<-chan string, <-chan *metering.Usage, error) {
 	var err error
 	params, err := BuildQwenChatParams(ctx, message)
 	if err != nil {
@@ -46,7 +53,7 @@ func QwenChat(ctx context.Context, message string) (<-chan string, error) {
 			"message": message,
 			"error":   err.Error(),
 		})
-		return nil, err
+		return nil, nil, err
 	}
 	resp, err := QwenChatHTTPRequest(ctx, params)
 	if err != nil {
@@ -54,14 +61,20 @@ func QwenChat(ctx context.Context, message string) (<-chan string, error) {
 			"message": message,
 			"error":   err.Error(),
 		})
-		return nil, err
+		return nil, nil, err
 	}
 
 	out := make(chan string, size)
+	usageChan := make(chan *metering.Usage, 1) // 用于接收模型返回的 usage 信息
 	go func() {
 		defer close(out)        // 确保关闭通道
+		defer close(usageChan)  // 确保关闭通道
 		defer resp.Body.Close() // 确保在函数退出时关闭响应体
-		err = handleQwenChatResponse(ctx, resp, out)
+
+		// 调用成本计算
+		var usage *metering.Usage
+
+		usage, err = handleQwenChatResponse(ctx, resp, out)
 		if err != nil {
 			logger.Error(ctx, "qwen.handleQwenChatResponse failed", map[string]any{
 				"message": message,
@@ -70,8 +83,10 @@ func QwenChat(ctx context.Context, message string) (<-chan string, error) {
 			// 注意：不能往 out 发 error，只能 log
 			// 调用方通过 context 或日志感知异常
 		}
+		// 发送 usage 到通道
+		usageChan <- usage
 	}()
-	return out, nil
+	return out, usageChan, nil
 }
 
 // QwenChatHTTPRequest 调用 qwen 对话模型的 HTTP 请求
@@ -163,62 +178,77 @@ type QwenChatResponse struct {
 // 参数：
 // - ctx context.Context: 上下文
 // - resp *http.Response: HTTP 响应
-// - res chan string: 回复通道-只写（每个元素为一个片段）
+// - rely chan string: 回复通道-只写（每个元素为一个片段）
 // 返回值：
-// - string: 响应体字符串
+// - *metering.Usage: 模型使用统计
 // - error: 错误信息
-func handleQwenChatResponse(ctx context.Context, resp *http.Response, res chan<- string) error {
+func handleQwenChatResponse(ctx context.Context, resp *http.Response, rely chan<- string) (*metering.Usage, error) {
 
 	if !stream { // 非流式返回
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("read response body: %w", err)
+			return nil, fmt.Errorf("read response body: %w", err)
 		}
 
 		var respBody QwenChatResponse
 		err = json.Unmarshal(body, &respBody)
 		if err != nil {
-			return fmt.Errorf("unmarshal response body: %w", err)
+			return nil, fmt.Errorf("unmarshal response body: %w", err)
 		}
 		if len(respBody.Output.Choices) <= 0 {
 			logger.Error(ctx, "empty choices", map[string]any{
 				"response": string(body),
 			})
-			return fmt.Errorf("empty choices")
+			return nil, fmt.Errorf("empty choices")
 		}
-		res <- respBody.Output.Choices[0].Message.Content
-		return nil
+		rely <- respBody.Output.Choices[0].Message.Content
+
+		usage := &metering.Usage{
+			Model:            ChatModel,
+			PromptTokens:     respBody.Usage.InputTokens,
+			CompletionTokens: respBody.Usage.OutputTokens,
+			TotalTokens:      respBody.Usage.TotalTokens,
+		}
+		return usage, nil
 	}
 
 	fmt.Printf("-------- handleQwenChatStreamResponse --------\n")
 
-	err := handleQwenChatStreamResponse(ctx, resp, res)
+	usage, err := handleQwenChatStreamResponse(ctx, resp, rely)
 	if err != nil {
 		logger.Error(ctx, "handleQwenChatStreamResponse failed", map[string]any{
 			"error": err.Error(),
 		})
-		return fmt.Errorf("handleQwenChatStreamResponse: %w", err)
+		return nil, fmt.Errorf("handleQwenChatStreamResponse: %w", err)
 	}
 
-	return nil
+	return usage, nil
 }
 
 // handleQwenChatStreamResponse 处理 qwen 对话模型的 HTTP 流式响应
 // 参数：
 // - ctx context.Context: 上下文
 // - resp *http.Response: HTTP 响应
-// - res chan string: 回复通道-只写（每个元素为一个片段）
+// - reply chan string: 回复通道-只写（每个元素为一个片段）
 // 返回值：
 // - error: 错误信息
-func handleQwenChatStreamResponse(ctx context.Context, resp *http.Response, res chan<- string) error {
+func handleQwenChatStreamResponse(ctx context.Context, resp *http.Response, reply chan<- string) (*metering.Usage, error) {
 	reader := bufio.NewReader(resp.Body)
+	var finalUsage *struct {
+		InputTokens  int `json:"prompt_tokens"`
+		OutputTokens int `json:"completion_tokens"`
+		TotalTokens  int `json:"total_tokens"`
+	}
+
+	start := time.Now()
+
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
-			return fmt.Errorf("read response body: %w", err)
+			return nil, fmt.Errorf("read response body: %w", err)
 		}
 		line = strings.TrimSpace(line)
 		if line == "" || line == ": ping" {
@@ -239,10 +269,18 @@ func handleQwenChatStreamResponse(ctx context.Context, resp *http.Response, res 
 				} `json:"delta"`
 				FinishReason *string `json:"finish_reason"`
 			} `json:"choices"`
+			Usage *struct { // 注意：usage 只保留最后一个chunk
+				InputTokens  int `json:"prompt_tokens"`
+				OutputTokens int `json:"completion_tokens"`
+				TotalTokens  int `json:"total_tokens"`
+			} `json:"usage,omitempty"`
 		}
 		err = json.Unmarshal([]byte(jsonString), &chunk)
 		if err != nil {
-			return fmt.Errorf("unmarshal response body: %w", err)
+			return nil, fmt.Errorf("unmarshal response body: %w", err)
+		}
+		if chunk.Usage != nil {
+			finalUsage = chunk.Usage // 覆盖之前的，最终保留最后一个
 		}
 		if len(chunk.Choices) == 0 {
 			continue
@@ -250,16 +288,29 @@ func handleQwenChatStreamResponse(ctx context.Context, resp *http.Response, res 
 		content := chunk.Choices[0].Delta.Content
 		if content != "" {
 			select {
-			case res <- content: // 仅发送文本内容到通道
+			case reply <- content: // 仅发送文本内容到通道
 			case <-ctx.Done():
-				return ctx.Err()
+				return nil, ctx.Err()
 			}
 		}
 		// end
-		if chunk.Choices[0].FinishReason != nil && *chunk.Choices[0].FinishReason == "stop" {
+		if line == DoneChunk {
 			break
 		}
 	}
 
-	return nil
+	// 成本计算
+	if finalUsage == nil {
+		return nil, fmt.Errorf("empty usage")
+	}
+	usage := &metering.Usage{
+		Model:            ChatModel,
+		PromptTokens:     finalUsage.InputTokens,
+		CompletionTokens: finalUsage.OutputTokens,
+		TotalTokens:      finalUsage.TotalTokens,
+		StartTime:        start,
+		EndTime:          time.Now(),
+	}
+
+	return usage, nil
 }
