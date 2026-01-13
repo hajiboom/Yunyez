@@ -1,10 +1,9 @@
-// 默认日志记录器
+// Package logger 默认日志记录器
 // 该日志记录器默认输出到标准错误流（stderr）
 // 记录基本的业务日志
 // 日志级别：Debug < Info < Warn < Error
 // @date: 2025-11-17
 // @version: 1.0.0
-
 package logger
 
 import (
