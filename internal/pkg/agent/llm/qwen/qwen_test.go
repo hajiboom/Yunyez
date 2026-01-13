@@ -15,7 +15,7 @@ func TestQwenChatSingle(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	stream, err := QwenChat(ctx, "你是谁")
+	stream, usage, err := QwenChat(ctx,"", "你是谁")
 	if err != nil {
 		t.Fatalf("QwenChat failed: %v", err)
 	}
@@ -34,6 +34,16 @@ func TestQwenChatSingle(t *testing.T) {
 				t.Log("empty reply")
 			} else {
 				t.Logf("Reply: %.50s...", reply)
+			}
+		case u, ok := <-usage:
+			if !ok {
+				t.Log("usage closed")
+				return
+			}
+			if u == nil {
+				t.Log("empty usage")
+			} else {
+				t.Logf("Usage: %v", u)
 			}
 		}
 	}
@@ -111,13 +121,16 @@ func BenchmarkQwenChatConcurrent(b *testing.B) {
             // 这里不能用 id，但可以用原子计数 or 取 pb 的隐式序号（不暴露）
             // 我们用一个简单 trick：取当前时间纳秒模
             question := questions[(time.Now().UnixNano() % int64(len(questions)))]
-			reply, err := QwenChat(ctx, question)
+			reply, usage, err := QwenChat(ctx,"", question)
 			if err != nil {
 				b.Fatalf("QwenChat failed: %v", err)
 			}
 
 			for r := range reply {
 				b.Logf("Reply: %.50s...", r)
+			}
+			for u := range usage {
+				b.Logf("Usage: %v", u)
 			}
 
         }

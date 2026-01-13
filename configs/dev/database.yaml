@@ -9,6 +9,7 @@ database:
     max_idle_conns: 10 # 最大空闲连接数
     max_open_conns: 100 # 最大打开连接数
     conn_max_lifetime: 3600 # 连接最大生命周期，单位秒
+    time_zone: "Asia/Shanghai" # 时区设置
     # 模式列表
     schemas:
       - "iot" # 设备
