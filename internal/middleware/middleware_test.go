@@ -132,6 +132,6 @@ func TestSetupMiddlewares(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	defer logger.Sync()
 
-	middlewares := SetupMiddlewares(logger, "test-secret")
+	middlewares := SetupMiddlewares()
 	assert.Len(t, middlewares, 6) // 应该有6个中间件
 }

@@ -20,6 +20,7 @@ __pycache__/
 
 # 配置文件
 configs/**/ai.yaml
+configs/**/default.yaml
 
 # 脚本文件
 example/scripts/bash.sh

@@ -2,3 +2,6 @@
 http:
   addr: "http://127.0.0.1" # HTTP 服务监听地址
   port: "8080" # HTTP 服务监听端口
+
+jwt:
+  secret: "test-secret" # JWT 密钥

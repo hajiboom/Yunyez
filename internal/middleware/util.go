@@ -1,22 +1,13 @@
 package middleware
 
 import (
-	"os"
-
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 )
 
 // InitMiddlewares 根据配置初始化中间件
 func InitMiddlewares() ([]gin.HandlerFunc, error) {
-	// 初始化zap logger
-	logger, err := zap.NewProduction()
-	if err != nil {
-		return nil, err
-	}
-
 	// 从配置中读取JWT密钥
 	jwtSecret := viper.GetString("jwt.secret")
 	if jwtSecret == "" {
@@ -46,10 +37,10 @@ func InitMiddlewares() ([]gin.HandlerFunc, error) {
 	var middlewares []gin.HandlerFunc
 
 	// 添加日志中间件
-	middlewares = append(middlewares, LoggerToFile(logger))
+	middlewares = append(middlewares, LoggerToFile())
 
 	// 添加恢复中间件
-	middlewares = append(middlewares, RecoveryMiddleware(logger))
+	middlewares = append(middlewares, RecoveryMiddleware())
 
 	// 添加CORS中间件
 	middlewares = append(middlewares, CORSMiddleware())
@@ -83,23 +74,4 @@ func SetupRouterWithMiddlewares(router *gin.Engine) error {
 	}
 
 	return nil
-}
-
-// SetupLogger 初始化日志记录器
-func SetupLogger() (*zap.Logger, error) {
-	// 检查是否是开发环境
-	env := os.Getenv("GIN_MODE")
-	if env == "debug" {
-		logger, err := zap.NewDevelopment()
-		if err != nil {
-			return nil, err
-		}
-		return logger, nil
-	}
-
-	logger, err := zap.NewProduction()
-	if err != nil {
-		return nil, err
-	}
-	return logger, nil
 }

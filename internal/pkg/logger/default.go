@@ -70,7 +70,7 @@ func New() *Logger {
 	log.Printf("log file path: %s\n", logFilePath)
 
 	// 创建文件输出
-	var fileSync zapcore.WriteSyncer = zapcore.AddSync(os.Stderr)
+	var fileSync  = zapcore.AddSync(os.Stderr)
 	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err == nil {
 		fileSync = zapcore.AddSync(file)

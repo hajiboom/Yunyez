@@ -2,17 +2,19 @@ package middleware
 
 import (
 	"time"
+	"yunyez/internal/common/config"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 )
 
 // SetupMiddlewares 初始化并返回常用的中间件集合
-func SetupMiddlewares(logger *zap.Logger, jwtSecret string) []gin.HandlerFunc {
+func SetupMiddlewares() []gin.HandlerFunc {
+	// 
+	jwtSecret := config.GetStringWithDefault("jwt.secret", "test-secret")
 	return []gin.HandlerFunc{
-		LoggerToFile(logger),        // 日志记录
-		RecoveryMiddleware(logger),  // Panic恢复
+		LoggerToFile(),              // 日志记录
+		RecoveryMiddleware(),        // Panic恢复
 		CORSMiddleware(),            // CORS跨域
 		SecurityHeadersMiddleware(), // 安全头部
 		RateLimitMiddleware(RateLimitConfig{

@@ -3,15 +3,16 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"runtime"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
+	logger "yunyez/internal/pkg/logger"
 )
 
 // RecoveryMiddleware 恢复中间件，用于捕获panic并记录错误日志
-func RecoveryMiddleware(logger *zap.Logger) gin.HandlerFunc {
+func RecoveryMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -21,13 +22,16 @@ func RecoveryMiddleware(logger *zap.Logger) gin.HandlerFunc {
 				stackTrace := string(stackBuf[:stackSize])
 
 				// 记录错误日志
-				logger.Error("Panic recovered",
-					zap.Any("error", err),
-					zap.String("stack_trace", stackTrace),
-					zap.String("request_uri", c.Request.RequestURI),
-					zap.String("method", c.Request.Method),
-					zap.String("client_ip", c.ClientIP()),
-				)
+				fields := map[string]interface{}{
+					"error":       err,
+					"stack_trace": stackTrace,
+					"request_uri": c.Request.RequestURI,
+					"method":      c.Request.Method,
+					"client_ip":   c.ClientIP(),
+				}
+
+				ctx := context.Background()
+				logger.Error(ctx, "Panic recovered", fields)
 
 				// 返回500错误
 				c.JSON(http.StatusInternalServerError, gin.H{

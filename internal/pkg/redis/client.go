@@ -1,3 +1,5 @@
+// Package redis Redis Client
+// 提供全局唯一的 Redis 客户端实例
 package redis
 
 import (

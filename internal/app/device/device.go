@@ -5,11 +5,11 @@ import (
 	"context"
 	"fmt"
 	"yunyez/internal/common/config"
-	device_manage "yunyez/internal/controller/deviceManage"
-	voice_manage "yunyez/internal/controller/voiceManage"
+	middleware "yunyez/internal/middleware"
+	deviceManage "yunyez/internal/controller/deviceManage"
+	voiceManage "yunyez/internal/controller/voiceManage"
 	logger "yunyez/internal/pkg/logger"
 	mqtt "yunyez/internal/pkg/mqtt"
-
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,10 +36,13 @@ func Start() {
 // HTTPStart 启动http服务 设置路由监听端口
 func HTTPStart() {
 	// 初始化gin路由
-	r := gin.Default()
+	r := gin.New()
 
-	// TODO 跨域中间件
-	// ...
+	// 添加中间件集合
+	middlewares := middleware.SetupMiddlewares()
+	for _, m := range middlewares {
+		r.Use(m)
+	}
 
 	// 设备路由
 	api := r.Group("/api")
@@ -47,14 +50,14 @@ func HTTPStart() {
 
 	deviceGroup := api.Group("/device")
 	{
-		deviceGroup.GET("/fetch", device_manage.FetchDeviceList)       // 获取设备列表
-		deviceGroup.DELETE("/delete/:sn", device_manage.DeleteDevice)  // 删除设备
-		deviceGroup.GET("/fetch/:sn", device_manage.FetchDeviceDetail) // 获取设备详情
-		deviceGroup.PUT("/update", device_manage.UpdateDeviceInfo)     // 更新设备
+		deviceGroup.GET("/fetch", deviceManage.FetchDeviceList)       // 获取设备列表
+		deviceGroup.DELETE("/delete/:sn", deviceManage.DeleteDevice)  // 删除设备
+		deviceGroup.GET("/fetch/:sn", deviceManage.FetchDeviceDetail) // 获取设备详情
+		deviceGroup.PUT("/update", deviceManage.UpdateDeviceInfo)     // 更新设备
 	}
 
 	// 语音路由
-	r.POST("/voice", voice_manage.UploadVoice) // 发送语音
+	r.POST("/voice", voiceManage.UploadVoice) // 发送语音
 
 	// 获取 HTTP 端口号
 	port := ":" + config.GetString("http.port")

@@ -3,9 +3,3 @@ rate_limit:
   mode: "local"          # 限流模式: local 或 distributed
   requests_per_second: 10.0  # 每秒请求数限制
   burst: 20              # 突发容量
-
-# Redis 配置 (当使用分布式限流时需要)
-redis:
-  addr: "localhost:6379"  # Redis 地址
-  password: ""            # Redis 密码
-  db: 0                   # Redis 数据库编号
