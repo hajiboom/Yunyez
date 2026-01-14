@@ -23,3 +23,9 @@ database:
     user: "mongo"
     password: "mongo"
     dbname: "yunyez"
+
+# Redis 配置
+redis:
+  addr: "localhost:6379"  # Redis 地址
+  password: ""            # Redis 密码
+  db: 0                   # Redis 数据库编号
