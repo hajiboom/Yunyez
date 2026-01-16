@@ -1,3 +1,4 @@
+// Package types defines data structures used in the video client
 package types
 
 import (

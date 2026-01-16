@@ -1,3 +1,8 @@
+// Package interfaces defines the server-side interfaces for the video module
+//
+// The Server interface defines the methods that the server must implement to handle
+// video streaming and management. These methods include starting and stopping the server,
+// getting server status, stream information, client information, and adding/removing streams.
 package interfaces
 
 import (
