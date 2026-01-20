@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	audioStorage = config.GetString("audio.storage")                                                 // 音频临时存储目录                                                            // NLU 自然语言理解客户端 - 本地模型
+	audioStorage = config.GetString("audio.storage") // 音频临时存储目录                                                            // NLU 自然语言理解客户端 - 本地模型
 )
 
 // ProcessFull 处理完整帧
