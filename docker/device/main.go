@@ -5,8 +5,6 @@ import (
 	device "yunyez/internal/app/device"
 )
 
-
-
 // 设备服务
 // 设备通信支持：mqtt，websocket
 
