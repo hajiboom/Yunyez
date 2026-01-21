@@ -1,23 +1,20 @@
 #!/bin/bash
-# ./setup-infra.sh
+# 该文件位于scripts目录下 ./scripts/setup-infra.sh
 # 用途：一键部署 Yunyez 基础设施（DB + Cache + MQTT）
 #
 
 set -e  # 遇错退出
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$SCRIPT_DIR/.."
+PROJECT_ROOT="$(pwd)"
 
-echo "🚀 Starting Yunyez infrastructure setup..."
+echo "🚀 Starting $PROJECT_ROOT infrastructure setup..."
 
-# 进入项目根目录
-cd "$PROJECT_ROOT"
 
 # 赋予 EMQX 初始化脚本执行权限
-chmod +x "$SCRIPT_DIR/docker/init-emqx.sh"
+chmod +x "docker/init-emqx.sh"
 
 # 启动基础设施
-docker compose -f docker/docker-compose.yml up -d
+docker compose -f ./docker/docker-compose.yml up -d
 
 echo ""
 echo "   Infrastructure started!"
