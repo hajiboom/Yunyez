@@ -17,7 +17,7 @@ cd "$PROJECT_ROOT"
 chmod +x "$SCRIPT_DIR/docker/init-emqx.sh"
 
 # 启动基础设施
-docker compose -f docker-compose.infra.yml up -d
+docker compose -f docker/docker-compose.yml up -d
 
 echo ""
 echo "   Infrastructure started!"
