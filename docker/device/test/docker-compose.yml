@@ -1,0 +1,18 @@
+version: '3.8'
+
+networks:
+  default:
+    external:
+      name: shared-services_shared-net
+
+services:
+  yunze-device:
+    build: .
+    container_name: yunze-device
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=shared_postgres
+      - REDIS_ADDR=shared_redis:6379
+      - MQTT_ADDRESS=tcp://shared_emqx:1883
