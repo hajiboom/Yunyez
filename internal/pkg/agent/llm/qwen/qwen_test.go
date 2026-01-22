@@ -10,12 +10,12 @@ import (
 )
 
 // TestQwenChatSingle 测试 Qwen 对话模型的单轮对话
-// go test -v ./internal/pkg/agent/qwen/ -run TestQwenChatSingle
+// go test -v ./internal/pkg/agent/llm/qwen/ -run TestQwenChatSingle
 func TestQwenChatSingle(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	stream, err := QwenChat(ctx, "什么是哈夫曼树")
+	stream, usage, err := QwenChat(ctx,"", "你是谁")
 	if err != nil {
 		t.Fatalf("QwenChat failed: %v", err)
 	}
@@ -35,10 +35,19 @@ func TestQwenChatSingle(t *testing.T) {
 			} else {
 				t.Logf("Reply: %.50s...", reply)
 			}
+		case u, ok := <-usage:
+			if !ok {
+				t.Log("usage closed")
+				return
+			}
+			if u == nil {
+				t.Log("empty usage")
+			} else {
+				t.Logf("Usage: %v", u)
+			}
 		}
 	}
 }
-
 
 var questions = []string{
 	// 简单问题
@@ -81,10 +90,10 @@ var questions = []string{
 
 // BenchmarkQwenChatConcurrent 测试 Qwen 对话模型的并发对话场景
 // # 默认并发 3
-// go test -bench=BenchmarkQwenChatConcurrent -benchtime=1x ./internal/pkg/agent/qwen/
+// go test -bench=BenchmarkQwenChatConcurrent -benchtime=1x ./internal/pkg/agent/llm/qwen/
 //
 // # 自定义并发 10
-// BENCH_PARALLELISM=10 go test -bench=BenchmarkQwenChatConcurrent -benchtime=1x ./internal/pkg/agent/qwen/
+// BENCH_PARALLELISM=10 go test -bench=BenchmarkQwenChatConcurrent -benchtime=1x ./internal/pkg/agent/llm/qwen/
 // 
 // # 对比不同负载（配合 -count）
 //BENCH_PARALLELISM=5 go test -bench=BenchmarkQwenChatConcurrent -count=3 ./...
@@ -112,13 +121,16 @@ func BenchmarkQwenChatConcurrent(b *testing.B) {
             // 这里不能用 id，但可以用原子计数 or 取 pb 的隐式序号（不暴露）
             // 我们用一个简单 trick：取当前时间纳秒模
             question := questions[(time.Now().UnixNano() % int64(len(questions)))]
-			reply, err := QwenChat(ctx, question)
+			reply, usage, err := QwenChat(ctx,"", question)
 			if err != nil {
 				b.Fatalf("QwenChat failed: %v", err)
 			}
 
 			for r := range reply {
 				b.Logf("Reply: %.50s...", r)
+			}
+			for u := range usage {
+				b.Logf("Usage: %v", u)
 			}
 
         }

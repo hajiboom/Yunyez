@@ -1,11 +1,10 @@
-// 数据库日志记录器
+// Package logger 数据库日志记录器
 // 该日志记录器默认输出到标准错误流（stderr）
 // 记录数据库操作日志，sql执行及时间
 // 实现 gorm.Interface 接口的 LogMode 方法
 // 日志级别：Debug < Info < Warn < Error
 // @date: 2025-11-17
 // @version: 1.0.0
-
 package logger
 
 import (
@@ -16,7 +15,7 @@ import (
 	gorm_logger "gorm.io/gorm/logger"
 )
 
-// sql日志记录器
+// SQLLogger sql日志记录器
 type SQLLogger struct {
 	logger *Logger
 }

@@ -14,11 +14,11 @@ import (
 
 var (
 	mqttAddress = config.GetString("mqtt.address")         // MQTT 代理地址
-	username     = config.GetString("mqtt.client.username") // MQTT 客户端用户名
-	password     = config.GetString("mqtt.client.password") // MQTT 客户端密码
-	Model        = config.GetString("rule.model")           // 消息转发模型
+	username    = config.GetString("mqtt.client.username") // MQTT 客户端用户名
+	password    = config.GetString("mqtt.client.password") // MQTT 客户端密码
+	Model       = config.GetString("rule.model")           // 消息转发模型
 
-	MqttClient paho.Client // MQTT 客户端实例
+	MqttClient paho.Client // 原生MQTT客户端实例
 )
 
 var (

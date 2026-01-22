@@ -1,10 +1,9 @@
-// 默认日志记录器
+// Package logger 默认日志记录器
 // 该日志记录器默认输出到标准错误流（stderr）
 // 记录基本的业务日志
 // 日志级别：Debug < Info < Warn < Error
 // @date: 2025-11-17
 // @version: 1.0.0
-
 package logger
 
 import (
@@ -71,7 +70,7 @@ func New() *Logger {
 	log.Printf("log file path: %s\n", logFilePath)
 
 	// 创建文件输出
-	var fileSync zapcore.WriteSyncer = zapcore.AddSync(os.Stderr)
+	var fileSync  = zapcore.AddSync(os.Stderr)
 	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err == nil {
 		fileSync = zapcore.AddSync(file)

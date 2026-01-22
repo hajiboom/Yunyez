@@ -35,6 +35,8 @@ const (
 	VendorTest   = "test"
 )
 
+
+
 // GetVendor 获取厂商名称映射
 func GetVendor() map[string]string {
 	return map[string]string{

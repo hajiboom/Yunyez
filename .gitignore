@@ -20,6 +20,11 @@ __pycache__/
 
 # 配置文件
 configs/**/ai.yaml
+configs/**/default.yaml
 
 # 脚本文件
 example/scripts/bash.sh
+
+# docker 配置相关文件-没必要藏着
+# docker/docker-compose.yml
+# docker/init-emqx.sh

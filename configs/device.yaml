@@ -1,8 +1,8 @@
-# 设备配置
+# 设备配置 测试
 device:
   # 设备ID
-  id: "device-001"
+  sn: "A0001"
   # 设备类型
   type: "sensor"
   # 设备名称
-  name: "Temperature Sensor"
+  name: "yunyez01"

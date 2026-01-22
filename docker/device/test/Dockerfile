@@ -1,0 +1,26 @@
+FROM yunyez-go:1.24.8
+
+# 目前还在开发阶段，所以默认环境变量为 dev 后续会根据环境变量切换到 pre 或 prod
+ENV ENVIRONMENT=dev 
+ENV CGO_ENABLED=1
+ENV GOPROXY=https://goproxy.cn,direct
+
+# 复制整个项目到容器中
+COPY ./ /app/go/yunyez/device/
+# 设置工作目录
+WORKDIR /app/go/yunyez/device/
+# 复制主函数到服务目录
+RUN cp -f docker/device/main.go main.go
+
+# 安装依赖
+RUN /usr/local/go/bin/go mod tidy
+RUN /usr/local/go/bin/go build -o yunyez-device
+RUN chmod +x yunyez-device
+
+# 修改环境变量 env
+RUN if [ ! -f configs/config.yml ]; then echo "Error: Missing configs/config.yml"; exit 1; fi && \
+    sed -i "s|^\([[:space:]]*\)env:.*|\1env: $(echo "$ENVIRONMENT" | sed 's/[\/&]/\\&/g')|" configs/config.yml
+# 暴露端口
+EXPOSE 8080
+# 启动服务
+CMD ["./yunyez-device"]

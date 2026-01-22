@@ -1,4 +1,4 @@
-// topic.go 定制化 MQTT 主题
+// Package core 定制化 MQTT 主题
 package core
 
 import (

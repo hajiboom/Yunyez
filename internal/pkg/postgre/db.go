@@ -1,3 +1,4 @@
+// Package postgre postgresql database client
 package postgre
 
 import (
@@ -42,8 +43,9 @@ func NewClient() error {
 		dbname := config.GetString("database.postgres.dbname")
 		sslmode := config.GetString("database.postgres.sslmode")
 		schemas := config.GetList("database.postgres.schemas")
-		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-			host, port, user, password, dbname, sslmode)
+		timeZone := config.GetString("database.postgres.time_zone")
+		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
+			host, port, user, password, dbname, sslmode, timeZone)
 		// 连接数据库
 		clientInstance = &Client{}
 		sqlLogger := logger.NewSQLLogger(logger.DefaultLogger).(*logger.SQLLogger)

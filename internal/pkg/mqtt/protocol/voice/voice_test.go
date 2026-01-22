@@ -47,8 +47,8 @@ func TestHeaderRoundTrip(t *testing.T) {
 	}
 }
 
-// Helper: dummy crc_16 for testing
-func crc_16(data []byte) uint16 {
+// Helper: dummy crc16A for testing
+func crc16A(data []byte) uint16 {
 	var crc uint16 = 0xFFFF
 	for _, b := range data {
 		crc ^= uint16(b)
@@ -85,7 +85,7 @@ func TestFullPacketWithCRC(t *testing.T) {
 
 	// Step 2: compute CRC over [header(without CRC)][payload]
 	checksumData := append(rawHeader, payload...)
-	expectedCRC := crc_16(checksumData)
+	expectedCRC := crc16A(checksumData)
 
 	// Step 3: set CRC and build final packet
 	header.CRC16 = expectedCRC
@@ -107,7 +107,7 @@ func TestFullPacketWithCRC(t *testing.T) {
 	dataForCRC[10] = 0                 // zero out CRC high byte
 	dataForCRC[11] = 0                 // zero out CRC low byte
 
-	computedCRC := crc_16(dataForCRC)
+	computedCRC := crc16A(dataForCRC)
 
 	if receivedHeader.CRC16 != computedCRC {
 		t.Errorf("CRC mismatch: got %04x, expected %04x", receivedHeader.CRC16, computedCRC)

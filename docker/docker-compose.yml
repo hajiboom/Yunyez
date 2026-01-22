@@ -1,0 +1,83 @@
+version: '3.8'
+
+networks:
+  yunyez-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  emqx_data:
+  emqx_log:
+services:
+  # PostgreSQL 数据库服务
+  postgres:
+    image: postgres:16
+    container_name: yunyez_postgres
+    restart: always
+    networks:
+      - yunyez-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: yunyez
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis 缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: yunyez_redis
+    restart: always
+    networks:
+      - yunyez-network
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # EMQX MQTT Broker 服务
+  emqx:
+    image: emqx/emqx:5.8
+    container_name: yunyez_emqx
+    restart: always
+    networks:
+      - yunyez-network
+    volumes:
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
+    environment:
+      EMQX_ALLOW_ANONYMOUS: "false"
+      EMQX_ACL_NOMATCH: "allow"
+      EMQX_ENABLE_ACL_CACHE: "on"
+      EMQX_ACL_CACHE_SIZE: "32"
+      EMQX_ACL_CACHE_TTL: "1h"
+    ports:
+      - "1883:1883"    # MQTT
+      - "8083:8083"    # MQTT/SSL
+      - "8883:8883"    # MQTT/SSL
+      - "18083:18083"  # Dashboard
+    entrypoint: >
+      sh -c "
+        /init-emqx.sh &
+        exec /usr/bin/docker-entrypoint.sh
+      "
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx_ctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

@@ -8,13 +8,11 @@ import (
 	"net/http"
 	"sync"
 	"time"
-	config "yunyez/internal/common/config"
 )
 
 var (
-	NRLAddress = config.GetString("nlu.endpoint")
 	once sync.Once
-	NLUClient *Client
+	NLUClient Client
 )
 
 // Input 意图原始输入
@@ -30,14 +28,21 @@ type Intent struct {
 	IsCommand  bool    `json:"is_command"` // 是否为命令意图
 }
 
+// Emotion 情感识别结果
+type Emotion struct {
+	Text    string  `json:"text"`    // 输入的文本
+	Emotion string  `json:"emotion"` // 情感
+	Confidence float32 `json:"confidence"` // 置信度
+}
+
 type Client struct {
 	Endpoint string `json:"endpoint"` // NLU 服务地址
 }
 
-func NewClient() *Client {
+func NewClient(endpoint string) Client {
 	once.Do(func() {
-		NLUClient = &Client{
-			Endpoint: NRLAddress,
+		NLUClient = Client{
+			Endpoint: endpoint,
 		}
 	})
 	return NLUClient
@@ -96,4 +101,11 @@ func (c *Client) Predict(input *Input) (*Intent, error) {
 	}
 
 	return &result, nil
+}
+
+
+// EmotionJudge  情感识别
+func (c *Client) EmotionJudge(text string) (*Emotion, error) {
+	// TODO 文字情感识别
+	return nil, nil
 }
