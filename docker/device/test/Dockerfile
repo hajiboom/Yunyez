@@ -6,9 +6,9 @@ ENV CGO_ENABLED=1
 ENV GOPROXY=https://goproxy.cn,direct
 
 # 复制整个项目到容器中
-COPY ./ /app/go/yunyez/device/
+COPY ./ /root/app/go/yunyez/device/
 # 设置工作目录
-WORKDIR /app/go/yunyez/device/
+WORKDIR /root/app/go/yunyez/device/
 # 复制主函数到服务目录
 RUN cp -f docker/device/main.go main.go
 
