@@ -27,7 +27,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -45,7 +45,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -60,6 +60,7 @@ services:
     volumes:
       - emqx_data:/opt/emqx/data
       - emqx_log:/opt/emqx/log
+      - ./docker/init-emqx.sh:/init-emqx.sh # ✅ 关键！挂载脚本
     environment:
       EMQX_ALLOW_ANONYMOUS: "false"
       EMQX_ACL_NOMATCH: "allow"
@@ -67,17 +68,18 @@ services:
       EMQX_ACL_CACHE_SIZE: "32"
       EMQX_ACL_CACHE_TTL: "1h"
     ports:
-      - "1883:1883"    # MQTT
-      - "8083:8083"    # MQTT/SSL
-      - "8883:8883"    # MQTT/SSL
-      - "18083:18083"  # Dashboard
+      - "1883:1883" # MQTT
+      - "8083:8083" # MQTT/SSL
+      - "8883:8883" # MQTT/SSL
+      - "18083:18083" # Dashboard
     entrypoint: >
       sh -c "
+        chmod +x /init-emqx.sh &&
         /init-emqx.sh &
         exec /usr/bin/docker-entrypoint.sh
       "
     healthcheck:
-      test: ["CMD", "/opt/emqx/bin/emqx_ctl", "status"]
+      test: [ "CMD", "/opt/emqx/bin/emqx_ctl", "status" ]
       interval: 30s
       timeout: 10s
       retries: 3
