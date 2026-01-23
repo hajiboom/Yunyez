@@ -8,7 +8,7 @@ networks:
 services:
   yunyez-device:
     build:
-      context: ../../../..          # ← 构建上下文 = 项目根目录
+      context: ../../../          # ← 构建上下文 = 项目根目录
       dockerfile: docker/device/test/Dockerfile.yunyez_device
     container_name: yunyez-device
     restart: always
