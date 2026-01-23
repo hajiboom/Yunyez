@@ -3,11 +3,13 @@ version: '3.8'
 networks:
   default:
     external:
-      name: shared-services_shared-net
+      name: docker_yunyez-network #  ← 与 infra 中定义的 network 名称一致
 
 services:
   yunyez-device:
-    build: .
+    build:
+      context: ../../../..          # ← 构建上下文 = 项目根目录
+      dockerfile: docker/device/test/Dockerfile.yunyez_device
     container_name: yunyez-device
     restart: always
     ports:

@@ -2,7 +2,7 @@
 CREATE SCHEMA auth;
 
 -- 设备与 IoT 通信（设备注册、心跳、指令下发）
-CREATE SCHEMA device;
+CREATE SCHEMA iot;
 
 -- 媒体存储元数据（语音、图像的 URL、时间戳、标签等，实际文件存对象存储如 S3/MinIO）
 CREATE SCHEMA media;
