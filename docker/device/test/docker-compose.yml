@@ -1,5 +1,3 @@
-version: '3.8'
-
 networks:
   default:
     external:
@@ -8,7 +6,7 @@ networks:
 services:
   yunyez-device:
     build:
-      context: ../../../..          # ← 构建上下文 = 项目根目录
+      context: ../../../          # ← 构建上下文 = 项目根目录
       dockerfile: docker/device/test/Dockerfile.yunyez_device
     container_name: yunyez-device
     restart: always
@@ -18,3 +16,12 @@ services:
       - DB_HOST=yunyez_postgres     # ← 使用 infra 中定义的 container_name
       - REDIS_ADDR=yunyez_redis:6379
       - MQTT_ADDRESS=tcp://yunyez_emqx:1883
+    # 添加资源限制以防止OOM
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
