@@ -4,17 +4,19 @@ FROM yunyez-go:1.24.8
 ENV ENVIRONMENT=dev 
 ENV CGO_ENABLED=1
 ENV GOPROXY=https://goproxy.cn,direct
+ENV GOMAXPROCS=1
+
 
 # 复制整个项目到容器中
-COPY ./ /root/app/go/yunyez/device/
+COPY ./ /root/app/go/Yunyez
 # 设置工作目录
-WORKDIR /root/app/go/yunyez/device/
+WORKDIR /root/app/go/Yunyez
 # 复制主函数到服务目录
 RUN cp -f docker/device/main.go main.go
 
 # 安装依赖
-RUN /usr/local/go/bin/go mod tidy
-RUN /usr/local/go/bin/go build -o yunyez-device
+RUN go mod tidy
+RUN go build -p=1 -o yunyez-device
 RUN chmod +x yunyez-device
 
 # 修改环境变量 env
