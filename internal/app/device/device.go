@@ -17,6 +17,13 @@ import (
 // Start 设备服务入口
 func Start() {
 	fmt.Println("device current environment: ", config.GetString("app.env"))
+
+	// load config
+	if err := config.Init(); err != nil {
+		fmt.Printf("failed to init config: %v\n", err)
+		return
+	}
+
 	// 启动mqtt连接
 	if err := mqtt.StartConnect(); err != nil {
 		logger.Error(context.TODO(), "mqtt.connect error", map[string]interface{}{
