@@ -2,6 +2,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"path/filepath"
 	"sync"
@@ -44,9 +45,9 @@ var (
 	}
 )
 
-func init() {
-	_ = initConfig()
-}
+// func init() {
+// 	_ = initConfig()
+// }
 
 // Init 初始化配置文件 供外部显示调用
 func Init() error {
@@ -62,14 +63,16 @@ func initConfig() error {
 	// 创建新的 viper 实例
 	newViper := viper.New()
 
-	// // 当前工作目录
-	// wd, err := os.Getwd()
-	// if err != nil {
-	// 	return err
-	// }
-
 	// 获取项目根目录
-	wd := tools.GetRootDir()
+	// wd := tools.GetRootDir()
+	wd, err := tools.GetRuntimeDir()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("pwd: %s\n", wd)
+
+
 	defaultConfig := filepath.Join(wd, BaseConfigFile)
 	newViper.SetConfigFile(defaultConfig)
 	watchConfig(newViper, defaultConfig)
@@ -136,18 +139,24 @@ func watchConfig(v *viper.Viper, path string) {
 
 // getViper 获取当前的 viper 实例
 func getViper() *viper.Viper {
-	v := cfgHolder.data.Load()
-	if v != nil && v.(*viper.Viper) != nil {
-		return v.(*viper.Viper)
-	}
+    v := cfgHolder.data.Load()
+    if v != nil {
+        if vp, ok := v.(*viper.Viper); ok && vp != nil {
+            return vp
+        }
+    }
 
-	once.Do(func() {
-		_ = initConfig()
-	})
-	v = cfgHolder.data.Load()
-	if v == nil || v.(*viper.Viper) == nil {
-		log.Fatalf("viper instance is nil")
-	}
+    // 如果还没初始化，尝试初始化（但要小心）
+    once.Do(func() {
+        if err := initConfig(); err != nil {
+            log.Fatalf("Failed to initialize config in getViper: %v", err)
+        }
+    })
+    // 再取一次
+    v = cfgHolder.data.Load()
+    if v == nil {
+        log.Fatal("viper instance is still nil after init")
+    }
 
 	return v.(*viper.Viper)
 }
