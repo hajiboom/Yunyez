@@ -2,6 +2,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"path/filepath"
 	"sync"
@@ -61,15 +62,17 @@ func Init() error {
 func initConfig() error {
 	// 创建新的 viper 实例
 	newViper := viper.New()
-
-	// // 当前工作目录
-	// wd, err := os.Getwd()
-	// if err != nil {
-	// 	return err
-	// }
-
+	
 	// 获取项目根目录
-	wd := tools.GetRootDir()
+	// wd := tools.GetRootDir()
+	wd, err := tools.GetRuntimeDir()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("pwd: %s\n", wd)
+
+
 	defaultConfig := filepath.Join(wd, BaseConfigFile)
 	newViper.SetConfigFile(defaultConfig)
 	watchConfig(newViper, defaultConfig)

@@ -2,6 +2,7 @@
 package tools
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -12,7 +13,7 @@ import (
 //--------- 文件路径相关------------
 
 // GetRootDir 获取项目根目录
-// 从当前路径向上找 go.mod 所在目录 
+// 从当前路径向上找 go.mod 所在目录
 func GetRootDir() string {
 	_, b, _, _ := runtime.Caller(0)
 	// 向上找 go.mod 所在目录
@@ -27,6 +28,21 @@ func GetRootDir() string {
 		}
 		dir = parent
 	}
+}
+
+// GetRuntimeDir 获取运行时目录
+// 返回值:
+//   - string: 运行时目录路径
+//   - error: 处理过程中遇到的错误，若成功则为 nil
+func GetRuntimeDir() (string, error) {
+    execPath, err := os.Executable()
+    if err != nil {
+        return "", fmt.Errorf("failed to get executable path: %w", err)
+    }
+    // 二进制所在目录
+    binDir := filepath.Dir(execPath)
+    // configs 应该在 binDir/configs/
+    return binDir, nil
 }
 
 

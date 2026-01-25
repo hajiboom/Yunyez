@@ -33,7 +33,15 @@ var DefaultLogger *Logger
 
 // getLogFilePath 获取日志文件路径
 func getLogFilePath() string {
-	wd := tools.GetRootDir()
+	
+	// 获取项目根目录
+	// wd := tools.GetRootDir()
+	wd, err := tools.GetRuntimeDir()
+	if err != nil {
+		fmt.Printf("failed to get runtime dir: %v\n", err)
+	}
+	fmt.Printf("[pkg/logger]runtime dir: %s\n", wd)
+
 	logFilePath := config.GetString("logger.storage")
 	date := time.Now().Format("2006-01-02")
 	logFile := fmt.Sprintf("app-%s.log", date)
