@@ -1,104 +1,160 @@
 # 云也子(Yunyez)
 
-![项目结构图](docs/architecture.png)
+# Yunyez · 云也子
 
-## 🌟 项目简介
-云野迹(Yunyez) 是一个 **定制电子宠物**，核心目标是打通“智能设备-后端服务-数据可视化”全链路：
-- 设备端（ESP32开发板/模拟器）：通过 MQTT 上报定位、照片等打卡数据，支持自动/语音打卡；
-- 后端服务：基于 Go 开发，用 gRPC 优化服务间通信，HTTP 提供前端接口，支持配置化规则扩展；
-- 数据存储：PostgreSQL 存核心结构化数据，MongoDB 存非结构化附件，Redis 做缓存；
-- 前端看板：可视化展示电子宠物的状态、旅行陪伴打卡记录、设备配置，支持实时推送。
+> **你安心看世界，我默默守着你。**
 
-## 🛠️ 技术栈
-### 核心技术
-| 分类         | 技术选型                                                                 |
-|--------------|--------------------------------------------------------------------------|
-| 后端语言     | Go 1.24.8                                                                 |
-| 通信协议     | gRPC（服务间）、HTTP/JSON（前后端）、MQTT 3.1.1（设备-后端）、WebSocket（实时推送） |
-| 数据序列化   | Protocol Buffers（Proto3）、JSON                                          |
-| 数据库       | PostgreSQL 16（结构化核心数据）、MongoDB 6（非结构化数据）、Redis 7（缓存） |
-| 中间件       | EMQX（MQTT Broker）、Docker（容器化）、K8s（集群部署）、Minikube（本地测试） |
-| Web框架      | Gin（HTTP接口）                                                          |
-| ORM/客户端   | GORM（PostgreSQL）、mongo-driver（MongoDB）、go-redis（Redis）、paho.mqtt.golang（MQTT） |
+Yunyez 是一个为**独自旅行者**设计的个人安全守护设备。它不是一个玩具，也不是另一个打卡 App，而是一个能在你无法操作手机时（如遇险、昏迷、被胁迫），**自动取证、静默报警、持续求救**的小助手；
 
-### 工程工具
-- 版本控制：Git
-- 文档：DrawIO + feishu
-- 调试工具：Postman（HTTP）、MQTTX（MQTT）、Goland Debug
-- 部署工具：Docker Compose（本地一键启动）、K8s（集群部署）
+---
 
-## 🎯 核心功能
-### 1. 设备打卡模块
-- ✅ 设备通过 MQTT 上报打卡数据（定位、照片、设备ID），支持 Proto/JSON 双格式
-- ✅ 配置化打卡规则（景点范围、设备权限），无需改代码新增景点/设备
-- ✅ 打卡有效性校验（定位与景点距离≤100米）
-- ✅ 批量打卡支持（gRPC 流式通信，适配设备批量上报）
+## 🎯 核心价值
 
-### 2. 后端服务模块
-- ✅ 服务拆分：设备服务（MQTT消息处理、设备管理）、打卡服务（打卡逻辑、统计）
-- ✅ 双通信模式：gRPC（服务间高效通信）+ HTTP（前端/第三方调用）
-- ✅ 实时推送：WebSocket 推送打卡通知、设备在线状态
-- ✅ 数据分层：Repository 层封装数据库操作，Service 层处理业务逻辑
+### 1. **被动式安全守护**
+- **遇险自动响应**：检测到高冲击坠落、异常语音或 SOS 按钮触发，自动录像+报警
+- **昏迷求救**：长时间静止 + 偏离路线 → 自动发送位置 + 播放求救音
+- **双电池冗余**：主备电池热切换，确保 48 小时以上续航，永不突然断电
 
-### 3. 数据存储模块
-- ✅ 结构化数据（用户、景点、打卡核心信息）→ PostgreSQL（支持事务、关联查询）
-- ✅ 非结构化数据（打卡照片、设备日志）→ MongoDB（高写入、灵活扩展）
-- ✅ 热点数据（设备在线状态、打卡缓存）→ Redis（高性能读取）
+### 2. **隐私优先设计**
+- 摄像头默认物理遮蔽，仅紧急时开启且 LED 红灯常亮
+- 所有音视频端到端加密，云端不解密，24 小时后自动删除
+- 无历史存储、无回放功能，杜绝偷拍滥用可能
 
-### 4. 可视化看板模块
-- ✅ 旅行足迹地图：展示用户打卡地点分布
-- ✅ 数据统计：按时间/景点/用户维度统计打卡次数
-- ✅ 设备状态监控：查看设备在线状态、最近打卡记录
-- ✅ 实时通知：打卡成功后前端实时收到提醒
+### 3. **轻量语音交互**
+- 本地 ASR/NLU 支持离线问答（如"省钱推荐"）
+- 通过蓝牙耳机输出语音，本体无扬声器 → 节电 + 隐私
+- 多模态融合判断（语音+IMU+GPS），避免菜市场等高噪环境误触发
 
-### 5. 部署与运维
-- ✅ Docker 容器化：所有服务+中间件支持 Docker 打包
-- ✅ K8s 集群部署：支持服务扩容、配置管理、服务发现
-- ✅ 日志记录：Zap 日志框架，按服务分类输出，便于问题排查
+---
 
-## 🏗️ 项目架构
-### 整体架构图
+## 🛠️ 技术架构（个人版）
 
+| 层级       | 技术选型 |
+|------------|---------|
+| 设备端     | 树莓派 Zero 2W / ESP32-S3 + GPS + IMU + 摄像头 |
+| 通信协议   | MQTT（设备↔后端）、gRPC（Go↔Python 模型） |
+| 后端       | Go（业务逻辑） + Python（ASR/NLU/LLM/TTS 本地模型） |
+| 数据库     | PostgreSQL（含 PostGIS） + Redis |
+| 部署       | Docker Compose 一键启动，支持单机运行 |
 
-### 核心数据流
+> 注：暂时不追求微服务、K8s 等复杂架构，聚焦功能闭环与真实体验。
 
+---
 
-## 使用场景
-### 1、🌍 旅行搭子：基于多模态感知的三维情感记忆系统
-> 💡 问题定义 
+## 📁 项目结构
 
-现有旅行记录工具（如手机相册、打卡 App）依赖用户主动操作，导致：  
-- 记忆碎片化（仅保存“高光时刻”）
-- 缺乏空间上下文（仅有 GPS 坐标，无环境结构）
-- 检索效率低（无法按“氛围”“情绪”“场景”召回）  
-> 🔬 技术方案  
+```
+Yunyez/
+├── cmd/                      # 程序入口（待完善）
+├── configs/                  # 配置文件
+│   ├── config.yaml           # 基础配置
+│   ├── device.yaml           # 设备配置
+│   └── dev/                  # 开发环境配置
+│       ├── database.yaml     # 数据库配置
+│       ├── mqtt.yaml         # MQTT 配置
+│       ├── default.yaml      # 通用配置
+│       ├── ai.yaml           # AI 模型配置
+│       └── rate_limit.yaml   # 限流配置
+├── docker/                   # Docker 相关
+│   ├── docker-compose.yml    # 基础设施 Compose 文件
+│   ├── device/               # 设备端 Docker
+│   ├── video/                # 视频服务
+│   └── rtsp-server/          # RTSP 服务器
+├── internal/                 # 核心代码
+│   ├── app/                  # 应用层
+│   ├── common/               # 公共模块（配置、工具、常量）
+│   ├── controller/           # HTTP 控制器
+│   ├── middleware/           # 中间件（认证、日志、CORS 等）
+│   ├── model/                # 数据模型
+│   ├── pkg/                  # 公共包
+│   │   ├── agent/            # AI Agent（LLM、ASR、TTS、NLU）
+│   │   ├── logger/           # 日志封装
+│   │   ├── mqtt/             # MQTT 客户端与协议
+│   │   ├── postgre/          # PostgreSQL 客户端
+│   │   ├── redis/            # Redis 客户端
+│   │   ├── transport/        # 传输层（TCP/UDP）
+│   │   ├── rtsp/             # RTSP 协议解析
+│   │   └── media/            # 媒体格式处理
+│   ├── service/              # 业务服务层
+│   ├── types/                # 类型定义
+│   └── video/                # 视频流服务（RTSP Server）
+├── sql/                      # SQL 脚本
+│   ├── default.sql
+│   ├── agent/                # Agent 相关表
+│   └── device/               # 设备相关表
+├── storage/                  # 存储目录
+│   ├── logs/                 # 日志文件
+│   └── tmp/audio/            # 临时音频文件
+└── example/                  # 示例代码
+    ├── mock/                 # 模拟设备（虚拟音视频采集）
+    └── scripts/              # 示例脚本
+```
 
-我们构建一个 端-边-云协同的轻量化三维记忆系统，实现无感、连续、可回溯的旅行记录。  
+---
 
-1. 设备端（边缘感知层）  
-- **多源定位融合**：GPS/北斗 + Wi-Fi/蓝牙指纹 + IMU，实现室内外无缝定位（精度：市区 5–10m，景区 10–20m）  
-- **轻量级视觉 SLAM（可选）**：  
-若设备带摄像头：运行稀疏 ORB-SLAM3 子模块，提取关键帧与点云  
-若无摄像头：通过蓝牙连接用户手机，复用其 ARKit/ARCore 构建的局部 3D 场景
-- **语音交互引擎**：本地部署小型 ASR + NLU 模型（如 Whisper-tiny + Rasa），支持离线关键词唤醒（“记一下这里”）
-- **低功耗设计**：采用事件驱动架构，仅在移动/语音触发时激活传感器
-2. 云端（记忆中枢）
-- **时空图数据库**：使用 Nebula Graph 或自研索引，将以下实体关联：
-User → Trip → [Location, Timestamp, EmotionTag, Media, PointCloud]
-- **3D 轨迹重建**：融合 GPS 轨迹 + 视觉关键帧，生成可漫游的轻量化 3D 路径（格式：glTF + GeoJSON）
-- **隐私保护**：所有媒体数据客户端加密（AES-256），密钥由用户持有；元数据脱敏后用于 AI 训练
-3. 平台端（交互层）
-- **WebGL 3D 地图引擎**：  
-基于 CesiumJS 或 Mapbox GL JS 扩展，支持：
-点击轨迹节点 → 播放当时录音 + 展示 360° 环境快照
-时间滑块拖拽 → 动态回放当日移动路径
-- **AI 记忆助手**：  
-基于 LLM（如 Qwen / Llama 3）生成结构化日志：“5月12日，你在京都哲学之道漫步，听到流水声，拍下樱花，说‘真想住在这里’”  
-支持自然语言查询：“展示所有下雨天的咖啡馆记忆”
+## 🔧 环境配置
 
-> 🎯 聚焦  
+### 依赖服务
 
-✅ 无感三维记录：无需用户举手机，即可捕获空间语义  
-✅ 跨模态对齐：语音、图像、位置、时间自动关联  
-✅ 边缘-云协同：保障体验的同时控制成本与隐私  
-本系统目前阶段不追求高精度建图（如厘米级），而是聚焦 “情感可回溯性” —— 让用户能回到那个氛围里，而非仅仅看到坐标。
+项目依赖以下基础设施服务，通过 Docker Compose 一键启动：
+
+| 服务       | 端口   | 用户名   | 密码      | 说明           |
+|------------|--------|----------|-----------|----------------|
+| PostgreSQL | 5432   | postgres | root      | 主数据库       |
+| Redis      | 6379   | -        | -         | 缓存服务       |
+| EMQX       | 1883   | root     | root123   | MQTT Broker    |
+| EMQX Dashboard | 18083 | root  | root123   | MQTT Web 管理  |
+
+### 配置文件说明
+
+- `configs/config.yaml` - 项目基础配置（环境、日志路径）
+- `configs/device.yaml` - 设备相关配置
+- `configs/dev/database.yaml` - 数据库连接配置
+- `configs/dev/mqtt.yaml` - MQTT 连接配置
+- `configs/dev/default.yaml` - HTTP 服务配置
+- `configs/dev/ai.yaml` - AI 模型配置（LLM、ASR、TTS、NLU）
+
+---
+
+## 🚀 服务启动
+
+### 1. 启动基础设施
+
+```bash
+# 一键启动（推荐）
+./setup-infra.sh
+
+# 或手动执行
+docker compose -f ./docker/docker-compose.yml up -d
+```
+
+启动后访问 EMQX Dashboard：`http://localhost:18083`（用户：root，密码：root123）
+
+### 2. 初始化数据库
+
+```bash
+# 连接 PostgreSQL 并执行 SQL 脚本
+psql -h localhost -U postgres -d yunyez -f sql/default.sql
+psql -h localhost -U postgres -d yunyez -f sql/device/device.sql
+psql -h localhost -U postgres -d yunyez -f sql/agent/cost.sql
+```
+
+### 3. 运行后端服务
+
+```bash
+# 安装 Go 依赖
+go mod tidy
+
+# 启动服务
+go run .
+```
+
+服务默认监听：`http://127.0.0.1:8080`
+
+---
+
+## 📋 环境变量
+
+项目通过 `configs/config.yaml` 中的 `app.env` 字段指定环境，默认使用 `dev` 环境。
+
+开发环境配置文件位于 `configs/dev/` 目录下。
