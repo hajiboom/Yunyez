@@ -1,47 +1,33 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite' // 新增 loadEnv
 import path from 'path'
 import vue from '@vitejs/plugin-vue'
-import dotenv from 'dotenv'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import { viteMockServe } from 'vite-plugin-mock' // 导入Mock插件
 
+// 接收 mode 参数，显式加载环境变量
+export default defineConfig(({ mode }) => {
+  // 加载根目录下对应环境的 .env 文件
+  const env = loadEnv(mode, process.cwd())
+  // 打印验证（启动项目时看控制台，确认变量读到了）
+  console.log('后端地址：', env.VITE_API_BASE_URL)
 
-dotenv.config({ path: '.env.development' })
-
-const baseURL = process.env.VITE_API_BASE_URL
-console.log('VITE_API_BASE_URL from env:', baseURL);
-
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [vue(),
-
-
-    AutoImport({
-      resolvers: [ElementPlusResolver()],
-    }),
-    Components({
-      resolvers: [ElementPlusResolver()],
-    }),
-  ],
-  resolve: {
-    // 2. 配置别名：@ 指向项目根目录下的 src 文件夹
-    alias: {
-      '@': path.resolve(__dirname, './src') 
-      // __dirname 是当前文件（vite.config.js）的目录（即项目根目录）
-      // ./src 是相对根目录的路径，path.resolve 转为绝对路径，兼容所有系统
-    }
-  },
-  // CORS 配置
-  server: {
-    proxy: {
-      '/api': {
-        target: baseURL,
-        changeOrigin: true,
-        // rewrite: (path) => `/api${path}`, // 给路径开头加 /api
+  return {
+    plugins: [
+      vue(),
+      AutoImport({ resolvers: [ElementPlusResolver()] }),
+      Components({ resolvers: [ElementPlusResolver()] }),
+    ],
+    resolve: {
+      alias: { '@': path.resolve(__dirname, './src') }
+    },
+    server: {
+      proxy: {
+        '/api': {
+          target: env.VITE_API_BASE_URL, // 用加载的环境变量
+          changeOrigin: true,
+        },
       },
     },
-  },
-  
+  }
 })

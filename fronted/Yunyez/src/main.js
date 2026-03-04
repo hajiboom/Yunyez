@@ -6,7 +6,11 @@ import router from './router'
 // 1. 导入Pinia
 import { createPinia } from 'pinia'
 
+
 // 2. 创建Pinia实例
 const pinia = createPinia()
-// 3. 挂载Pinia到Vue实例
-createApp(App).use(router).use(pinia).mount('#app')
+const app = createApp(App);
+
+app.use(router);
+app.use(pinia);
+app.mount('#app');
