@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package ai;
+
+option go_package = "yunyez/internal/pkg/types/pb/ai";
+
+import "common/types.proto";
+
+// NLU 意图识别服务
+service NLUService {
+  // 意图识别
+  rpc Predict(PredictRequest) returns (PredictResponse);
+
+  // 情感识别
+  rpc EmotionJudge(EmotionJudgeRequest) returns (EmotionJudgeResponse);
+
+  // 健康检查
+  rpc Health(common.HealthRequest) returns (common.HealthResponse);
+}
+
+message PredictRequest {
+  string text = 1;           // 输入文本
+}
+
+message PredictResponse {
+  string text = 1;           // 输入文本
+  string intent = 2;         // 意图
+  float confidence = 3;      // 置信度
+  bool is_command = 4;       // 是否为命令意图
+  common.Error error = 5;    // 错误信息
+}
+
+message EmotionJudgeRequest {
+  string text = 1;           // 输入文本
+}
+
+message EmotionJudgeResponse {
+  string text = 1;           // 输入文本
+  string emotion = 2;        // 情感类型
+  float confidence = 3;      // 置信度
+  common.Error error = 4;    // 错误信息
+}

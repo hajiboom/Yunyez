@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "yunyez/internal/pkg/types/pb/common";
+
+// 错误响应
+message Error {
+  int32 code = 1;
+  string message = 2;
+}
+
+// 健康检查请求
+message HealthRequest {
+}
+
+// 健康检查响应
+message HealthResponse {
+  string status = 1;
+  string version = 2;
+}

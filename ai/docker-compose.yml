@@ -6,8 +6,12 @@ services:
       context: ./asr
       dockerfile: Dockerfile
     ports:
-      - "8002:8002"
+      - "8002:8002"   # HTTP
+      - "50051:50051" # gRPC
     container_name: yunyez-asr
+    volumes:
+      - ./asr:/app
+    command: python -m src.server
     deploy:
       resources:
         reservations:
@@ -15,19 +19,37 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    networks:
+      - yunyez-network
 
   nlu:
     build:
       context: ./nlu
       dockerfile: Dockerfile
     ports:
-      - "8001:8001"
+      - "8001:8001"   # HTTP
+      - "50052:50052" # gRPC
     container_name: yunyez-nlu
+    volumes:
+      - ./nlu:/app
+    command: python -m src.server
+    networks:
+      - yunyez-network
 
   tts:
     build:
       context: ./tts
       dockerfile: Dockerfile
     ports:
-      - "8003:8003"
+      - "8003:8003"   # HTTP
+      - "50053:50053" # gRPC
     container_name: yunyez-tts
+    volumes:
+      - ./tts:/app
+    command: python -m src.server
+    networks:
+      - yunyez-network
+
+networks:
+  yunyez-network:
+    driver: bridge

@@ -1,4 +1,4 @@
-// Package tts provides text-to-speech services using Edge TTS.
+// Package tts provides text-to-speech services using Edge TTS and ChatTTS.
 package tts
 
 import (
@@ -10,17 +10,18 @@ import (
 	"strings"
 )
 
-var defaultEdgeEndpoint = "https://localhost:8003/tts"
+var defaultEdgeEndpoint = "http://localhost:8003/tts"
 
+// EdgeTTSConfig Edge TTS 配置
 type EdgeTTSConfig struct {
 	Endpoint string // Edge TTS endpoint URL
-	Voice string // Voice to use for synthesis
-	Rate    string // e.g., "+0%", "-10%"
-	Pitch   string // e.g., "+0Hz", "-2Hz"
-	Volume  string // e.g., "+0%", "+5%"
+	Voice    string // Voice to use for synthesis
+	Rate     string // e.g., "+0%", "-10%"
+	Pitch    string // e.g., "+0Hz", "-2Hz"
+	Volume   string // e.g., "+0%", "+5%"
 }
 
-
+// EdgeTTS Edge TTS 客户端
 type EdgeTTS struct {
 	config EdgeTTSConfig
 	client *http.Client
@@ -38,13 +39,6 @@ func NewEdgeTTS(config EdgeTTSConfig) *EdgeTTS {
 }
 
 // Synthesize synthesizes the given text into speech using Edge TTS.
-// the edge-tts server is a fastapi server so that we need to do a post request to the server
-// Parameters:
-//   - ctx: Context for request cancellation and timeout.
-//   - text: The text to be synthesized into speech.
-// Returns:
-//   - []byte: The synthesized audio data.
-//   - error: Any error encountered during the synthesis process.
 func (e *EdgeTTS) Synthesize(ctx context.Context, text string) ([]byte, error) {
 	if text == "" {
 		return nil, fmt.Errorf("text is empty")
@@ -52,10 +46,10 @@ func (e *EdgeTTS) Synthesize(ctx context.Context, text string) ([]byte, error) {
 
 	// build post request
 	reqBody := map[string]string{
-		"text": text,
-		"voice": e.config.Voice,
-		"rate": e.config.Rate,
-		"pitch": e.config.Pitch,
+		"text":   text,
+		"voice":  e.config.Voice,
+		"rate":   e.config.Rate,
+		"pitch":  e.config.Pitch,
 		"volume": e.config.Volume,
 	}
 
@@ -89,4 +83,42 @@ func (e *EdgeTTS) Synthesize(ctx context.Context, text string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+// Close 关闭 HTTP 客户端（无操作）
+func (e *EdgeTTS) Close() error {
+	return nil
+}
+
+// ChatTTSConfig ChatTTS 配置
+type ChatTTSConfig struct {
+	Endpoint    string // ChatTTS endpoint URL
+	Voice       string
+	Rate        string // e.g., "+0%", "-10%"
+	Pitch       string // e.g., "+0Hz", "-2Hz"
+	Volume      string // e.g., "+0%", "+5%"
+	Temperature string // e.g., "0.7"
+}
+
+// ChatTTS ChatTTS 客户端
+type ChatTTS struct {
+	config ChatTTSConfig
+}
+
+// NewChatTTS creates a new ChatTTS instance with the given configuration.
+func NewChatTTS(config ChatTTSConfig) *ChatTTS {
+	return &ChatTTS{
+		config: config,
+	}
+}
+
+// Synthesize 语音合成 - ChatTTS HTTP 方式
+func (c *ChatTTS) Synthesize(ctx context.Context, text string) ([]byte, error) {
+	// TODO: Implement ChatTTS synthesis
+	return nil, nil
+}
+
+// Close 关闭 HTTP 客户端（无操作）
+func (c *ChatTTS) Close() error {
+	return nil
 }

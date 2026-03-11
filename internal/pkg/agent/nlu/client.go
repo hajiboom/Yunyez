@@ -3,11 +3,25 @@ package nlu
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	pb "yunyez/internal/pkg/types/pb/ai"
+	pbCommon "yunyez/internal/pkg/types/pb/common"
+)
+
+// Protocol 协议类型
+type Protocol string
+
+const (
+	ProtocolHTTP  Protocol = "http"
+	ProtocolGRPC  Protocol = "grpc"
 )
 
 var (
@@ -30,28 +44,87 @@ type Intent struct {
 
 // Emotion 情感识别结果
 type Emotion struct {
-	Text    string  `json:"text"`    // 输入的文本
-	Emotion string  `json:"emotion"` // 情感
+	Text       string  `json:"text"`       // 输入的文本
+	Emotion    string  `json:"emotion"`    // 情感
 	Confidence float32 `json:"confidence"` // 置信度
 }
 
-type Client struct {
-	Endpoint string `json:"endpoint"` // NLU 服务地址
+// Config NLU 客户端配置
+type Config struct {
+	Model      string   // 模型类型：local
+	Protocol   Protocol // 协议类型：http, grpc
+	HTTPEndpoint string // HTTP 服务地址
+	GRPCEndpoint string // gRPC 服务地址
 }
 
-func NewClient(endpoint string) Client {
+// Client NLU 客户端
+type Client struct {
+	Protocol Protocol
+	httpEndpoint string // NLU 服务地址
+	grpcClient *GRPCClient
+}
+
+// GRPCClient gRPC NLU 客户端
+type GRPCClient struct {
+	conn   *grpc.ClientConn
+	client pb.NLUServiceClient
+}
+
+// NewClient 创建 NLU 客户端
+func NewClient(cfg Config) Client {
 	once.Do(func() {
-		NLUClient = Client{
-			Endpoint: endpoint,
+		client := Client{
+			Protocol:     cfg.Protocol,
+			httpEndpoint: cfg.HTTPEndpoint,
 		}
+		
+		if cfg.Protocol == ProtocolGRPC {
+			grpcClient, err := newGRPCClient(cfg.GRPCEndpoint)
+			if err != nil {
+				panic(fmt.Sprintf("create gRPC client failed: %v", err))
+			}
+			client.grpcClient = grpcClient
+		}
+		
+		NLUClient = client
 	})
 	return NLUClient
 }
 
+// newGRPCClient 创建 gRPC 客户端
+func newGRPCClient(endpoint string) (*GRPCClient, error) {
+	conn, err := grpc.NewClient(endpoint,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create gRPC connection: %w", err)
+	}
+
+	return &GRPCClient{
+		conn:   conn,
+		client: pb.NewNLUServiceClient(conn),
+	}, nil
+}
+
+// Close 关闭客户端
+func (c *Client) Close() error {
+	if c.grpcClient != nil && c.grpcClient.conn != nil {
+		return c.grpcClient.conn.Close()
+	}
+	return nil
+}
+
 // Health 检查 NLU 服务健康状态
-// 在首次创建客户端时调用，检查 NLU 服务是否健康
 func (c *Client) Health() error {
-	httpReq, err := http.NewRequest("GET", c.Endpoint+"/health", nil)
+	if c.Protocol == ProtocolGRPC {
+		return c.healthGRPC()
+	}
+	return c.healthHTTP()
+}
+
+// healthHTTP HTTP 方式健康检查
+func (c *Client) healthHTTP() error {
+	httpReq, err := http.NewRequest("GET", c.httpEndpoint+"/health", nil)
 	if err != nil {
 		return fmt.Errorf("create request: %w", err)
 	}
@@ -70,15 +143,40 @@ func (c *Client) Health() error {
 	return nil
 }
 
+// healthGRPC gRPC 方式健康检查
+func (c *Client) healthGRPC() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	resp, err := c.grpcClient.client.Health(ctx, &pbCommon.HealthRequest{})
+	if err != nil {
+		return fmt.Errorf("health check failed: %w", err)
+	}
+
+	if resp.Status != "ok" {
+		return fmt.Errorf("unhealthy status: %s", resp.Status)
+	}
+
+	return nil
+}
+
 // Predict 意图识别
 func (c *Client) Predict(input *Input) (*Intent, error) {
+	if c.Protocol == ProtocolGRPC {
+		return c.predictGRPC(input)
+	}
+	return c.predictHTTP(input)
+}
+
+// predictHTTP HTTP 方式意图识别
+func (c *Client) predictHTTP(input *Input) (*Intent, error) {
 	reqBody := Input{Text: input.Text}
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", c.Endpoint, bytes.NewBuffer(jsonData))
+	httpReq, err := http.NewRequest("POST", c.httpEndpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
@@ -103,8 +201,31 @@ func (c *Client) Predict(input *Input) (*Intent, error) {
 	return &result, nil
 }
 
+// predictGRPC gRPC 方式意图识别
+func (c *Client) predictGRPC(input *Input) (*Intent, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-// EmotionJudge  情感识别
+	resp, err := c.grpcClient.client.Predict(ctx, &pb.PredictRequest{
+		Text: input.Text,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("call NLU service: %w", err)
+	}
+
+	if resp.Error != nil {
+		return nil, fmt.Errorf("NLU error: %s", resp.Error.Message)
+	}
+
+	return &Intent{
+		Text:       resp.Text,
+		Intent:     resp.Intent,
+		Confidence: resp.Confidence,
+		IsCommand:  resp.IsCommand,
+	}, nil
+}
+
+// EmotionJudge 情感识别
 func (c *Client) EmotionJudge(text string) (*Emotion, error) {
 	// TODO 文字情感识别
 	return nil, nil

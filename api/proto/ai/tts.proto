@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package ai;
+
+option go_package = "yunyez/internal/pkg/types/pb/ai";
+
+import "common/types.proto";
+
+// TTS 语音合成服务
+service TTSService {
+  // 流式语音合成（推荐用于实时场景）
+  rpc StreamingSynthesize(stream StreamingSynthesizeRequest) returns (stream StreamingSynthesizeResponse);
+
+  // 单次语音合成
+  rpc Synthesize(SynthesizeRequest) returns (SynthesizeResponse);
+
+  // 健康检查
+  rpc Health(common.HealthRequest) returns (common.HealthResponse);
+}
+
+message StreamingSynthesizeRequest {
+  oneof request {
+    StreamingSynthesizeConfig config = 1;  // 配置信息（首包）
+    string text = 2;                        // 文本内容（后续包，支持分块）
+  }
+}
+
+message StreamingSynthesizeConfig {
+  string voice = 1;         // 语音：zh-CN-XiaoxiaoNeural, en-US-JennyNeural
+  float rate = 2;           // 语速：0.5-2.0
+  float pitch = 3;          // 音调：0.5-2.0
+  float volume = 4;         // 音量：0.0-1.0
+  string output_format = 5; // 输出格式：AUDIO_16KHZ_16BIT_RAW_PCM, AUDIO_24KHZ_48KBITRATE_GZIP
+}
+
+message StreamingSynthesizeResponse {
+  oneof result {
+    bytes audio_content = 1;  // 音频数据
+    common.Error error = 2;    // 错误信息
+  }
+}
+
+message SynthesizeRequest {
+  string text = 1;            // 输入文本
+  string voice = 2;           // 语音
+  float rate = 3;             // 语速
+  float pitch = 4;            // 音调
+  float volume = 5;           // 音量
+  string output_format = 6;   // 输出格式
+}
+
+message SynthesizeResponse {
+  bytes audio_content = 1;    // 音频数据
+  int32 duration_ms = 2;      // 音频时长（毫秒）
+  common.Error error = 3;     // 错误信息
+}

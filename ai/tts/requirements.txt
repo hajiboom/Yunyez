@@ -1,3 +1,7 @@
 fastapi>=0.100.0
 uvicorn[standard]>=0.22.0
 edge-tts>=6.1.14
+
+# gRPC
+grpcio==1.59.3
+grpcio-tools==1.59.3
