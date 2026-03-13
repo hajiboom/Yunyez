@@ -7,11 +7,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8002:8002"   # HTTP
-      - "50051:50051" # gRPC
+      - "50052:50052" # gRPC
     container_name: yunyez-asr
     volumes:
       - ./asr:/app
-    command: python -m src.server
+    command: python -m uvicorn src.server:app --host 0.0.0.0 --port 8002
     deploy:
       resources:
         reservations:
@@ -21,6 +21,30 @@ services:
               capabilities: [gpu]
     networks:
       - yunyez-network
+    profiles:
+      - http
+
+  asr-grpc:
+    build:
+      context: ./asr
+      dockerfile: Dockerfile
+    ports:
+      - "50052:50052" # gRPC
+    container_name: yunyez-asr-grpc
+    volumes:
+      - ./asr:/app
+    command: python -c "from src.grpc_server import serve; serve(50052)"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - yunyez-network
+    profiles:
+      - grpc
 
   nlu:
     build:
@@ -28,13 +52,30 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8001:8001"   # HTTP
-      - "50052:50052" # gRPC
+      - "50051:50051" # gRPC
     container_name: yunyez-nlu
     volumes:
       - ./nlu:/app
-    command: python -m src.server
+    command: python -m uvicorn src.server:app --host 0.0.0.0 --port 8001
     networks:
       - yunyez-network
+    profiles:
+      - http
+
+  nlu-grpc:
+    build:
+      context: ./nlu
+      dockerfile: Dockerfile
+    ports:
+      - "50051:50051" # gRPC
+    container_name: yunyez-nlu-grpc
+    volumes:
+      - ./nlu:/app
+    command: python -c "from src.grpc_server import serve; serve(50051)"
+    networks:
+      - yunyez-network
+    profiles:
+      - grpc
 
   tts:
     build:
@@ -46,9 +87,26 @@ services:
     container_name: yunyez-tts
     volumes:
       - ./tts:/app
-    command: python -m src.server
+    command: python -m uvicorn src.edgeTTS:app --host 0.0.0.0 --port 8003
     networks:
       - yunyez-network
+    profiles:
+      - http
+
+  tts-grpc:
+    build:
+      context: ./tts
+      dockerfile: Dockerfile
+    ports:
+      - "50053:50053" # gRPC
+    container_name: yunyez-tts-grpc
+    volumes:
+      - ./tts:/app
+    command: python -c "from src.grpc_server import serve; serve(50053)"
+    networks:
+      - yunyez-network
+    profiles:
+      - grpc
 
 networks:
   yunyez-network:
