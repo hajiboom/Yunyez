@@ -1,9 +1,19 @@
+"""NLU 服务入口 - 同时支持 HTTP 和 gRPC"""
+import threading
+import logging
 from fastapi import FastAPI
-from sentence_transformers import SentenceTransformer
-import joblib
+from fastapi import HTTPException
+from pydantic import BaseModel
+import uvicorn
 import numpy as np
 import os
 
+from .grpc_server import serve as serve_grpc
+from sentence_transformers import SentenceTransformer
+import joblib
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------
 # hugging face 镜像设置
@@ -14,41 +24,30 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(os.path.dirname(SCRIPT_DIR), "model")
 
-print("Loading NLU model from local or HF (via mirror)...")
-encoder = SentenceTransformer(os.path.join(MODEL_DIR, "encoder"))  # 先尝试本地
+logger.info("Loading NLU model from local or HF (via mirror)...")
+encoder = SentenceTransformer(os.path.join(MODEL_DIR, "encoder"))
 classifier = joblib.load(os.path.join(MODEL_DIR, "classifier.pkl"))
 
-# Define command intents (update as needed)
 COMMAND_INTENTS = {
-    "play_music", # 播放音乐
-    "set_temperature", # 设置温度
-    "turn_on_light", # 打开灯
-    "turn_off_light", # 关闭灯
-    "query_weather" # 查询天气
-    "chit_chat" # 闲聊
-    "deny_action" # 拒绝操作
+    "play_music",
+    "set_temperature",
+    "turn_on_light",
+    "turn_off_light",
+    "query_weather",
+    "chit_chat",
+    "deny_action"
 }
-
-
-# ---------------------------------------------
-# NLU 服务
-# ---------------------------------------------
-from pydantic import BaseModel
-
 
 app = FastAPI(title="NLU Service", version="1.0")
 
-# 定义请求体模型
 class NLURequest(BaseModel):
-    text: str  # 输入文本
+    text: str
 
-# 定义响应模型（可选但推荐）
 class NLUResponse(BaseModel):
-    text: str  # 输入文本
-    intent: str  # 预测意图
-    confidence: float  # 置信度
-    is_command: bool  # 是否为命令意图
-
+    text: str
+    intent: str
+    confidence: float
+    is_command: bool
 
 
 @app.post("/nlu", response_model=NLUResponse)
@@ -65,6 +64,28 @@ def predict(request: NLURequest):
         "is_command": is_command
     }
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+def run_grpc_server(port=50052):
+    """在独立线程中运行 gRPC 服务器"""
+    serve_grpc(port)
+
+
+def main():
+    """启动 HTTP + gRPC 双协议服务"""
+    # 启动 gRPC 服务器（独立线程）
+    grpc_thread = threading.Thread(target=run_grpc_server, args=(50052,), daemon=True)
+    grpc_thread.start()
+
+    logger.info("Starting NLU service with HTTP (8001) + gRPC (50052)")
+    
+    # 启动 HTTP 服务器
+    uvicorn.run(app, host="0.0.0.0", port=8001)
+
+
+if __name__ == "__main__":
+    main()

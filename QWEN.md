@@ -128,13 +128,16 @@ Yunyez/
 ├── example/                  # 示例代码
 │   ├── mock/                 # 模拟设备
 │   │   ├── virtual_capture/  # 虚拟视频采集
-│   │   └── virtual_voice/    # 虚拟语音
+│   │   ├── virtual_voice/    # 虚拟语音 (WAV 文件回放)
+│   │   └── virtual_voice_realtime/  # 实时流式语音 (麦克风采集)
 │   └── scripts/              # 示例脚本
 ├── docs/                     # 文档
 │   ├── protocol.md           # 通信协议规范
 │   ├── rtsp-server.md        # RTSP 服务文档
 │   ├── error_records.md      # 错误码定义
-│   └── setup.md              # 部署指南
+│   ├── setup.md              # 部署指南
+│   └── hard/                 # 硬件/嵌入式相关文档
+│       └── realtime-voice-streaming.md  # 实时流式语音架构设计
 ├── storage/                  # 存储目录
 │   ├── logs/                 # 日志文件
 │   └── tmp/audio/            # 临时音频文件
@@ -178,6 +181,40 @@ Yunyez/
 3. **LLM**: 智能对话 (使用通义千问或本地模型)
 4. **TTS**: 文字转语音 (Edge TTS 或本地 TTS)
 5. **计费**: 记录 Token 使用量到数据库
+
+### 3.1 实时流式语音传输 (`example/mock/virtual_voice_realtime`)
+
+为开发测试环境提供的实时语音交互模块，支持本地麦克风采集和流式传输。
+
+**核心模块**:
+| 模块 | 职责 | 技术选型 |
+|------|------|----------|
+| **音频采集** | 麦克风 PCM 采集 | PortAudio (gordonklaus/portaudio) |
+| **预处理** | 重采样、VAD、分帧 | 线性插值/能量阈值法 |
+| **MQTT 传输** | 协议封装、流式发送 | 自定义 12 字节协议头 |
+| **音频播放** | TTS 响应播放 | PortAudio + 环形缓冲 |
+| **会话管理** | 状态机控制 | FSM (IDLE→LISTENING→PROCESSING→SPEAKING) |
+
+**音频协议参数**:
+- 采样率：16000 Hz
+- 位深：16-bit PCM
+- 声道：单声道
+- 帧时长：20ms/帧 (640 字节)
+- QoS：1 (至少一次)
+
+**性能目标**:
+- 端到端延迟：< 500ms
+- 网络带宽：~64kbps
+- CPU 占用：< 5%
+
+**状态机**:
+```
+IDLE ──(语音活动)──> LISTENING ──(ASR 完成)──> PROCESSING ──(LLM 响应)──> SPEAKING ──(播放完成)──> IDLE
+                            │                                                        │
+                            └──────────────────(静音超时)────────────────────────────┘
+```
+
+详见：`docs/hard/realtime-voice-streaming.md`
 
 ### 4. RTSP 视频服务 (`internal/video`)
 
@@ -310,7 +347,10 @@ docker-compose up --build
 | `docs/protocol.md` | 通信协议规范 |
 | `docs/rtsp-server.md` | RTSP 服务文档 |
 | `docs/error_records.md` | 错误码定义 |
+| `docs/hard/realtime-voice-streaming.md` | 实时流式语音架构设计 |
 | `configs/config.yaml` | 基础配置 |
 | `docker/docker-compose.yml` | 基础设施编排 |
 | `internal/service/voice/handler/chat.go` | 语音处理核心逻辑 |
-| `internal/pkg/mqtt/protocol/voice/voice.go` | MQTT 音频协议 |
+| `internal/pkg/mqtt/protocol/voice/voice.go` | MQTT 音频协议头 |
+| `internal/pkg/mqtt/protocol/voice/message.go` | MQTT 音频消息构建 |
+| `internal/pkg/mqtt/core/client.go` | MQTT 客户端封装 |

@@ -5,9 +5,14 @@ import (
 	"yunyez/internal/common/constant"
 )
 
-var endpoint string = "http://localhost:8001"
 func TestPredictTurnOnLight(t *testing.T) {
-	client := NewClient(endpoint)
+	config := Config{
+		Model:        "local",
+		Protocol:     ProtocolHTTP,
+		HTTPEndpoint: "http://localhost:8001/nlu",
+		GRPCEndpoint: "localhost:50052",
+	}
+	client := NewClient(config)
 	
 	// 测试用例1: 打开所有灯
 	input := &Input{
@@ -35,7 +40,13 @@ func TestPredictTurnOnLight(t *testing.T) {
 }
 
 func TestPredictTurnOffLight(t *testing.T) {
-	client := NewClient(endpoint)
+	config := Config{
+		Model:        "local",
+		Protocol:     ProtocolHTTP,
+		HTTPEndpoint: "http://localhost:8001/nlu",
+		GRPCEndpoint: "localhost:50052",
+	}
+	client := NewClient(config)
 	
 	// 测试用例1: 关闭所有灯
 	input := &Input{
@@ -63,7 +74,13 @@ func TestPredictTurnOffLight(t *testing.T) {
 }
 
 func TestPredictSetTemperature(t *testing.T) {
-	client := NewClient(endpoint)
+	config := Config{
+		Model:        "local",
+		Protocol:     ProtocolHTTP,
+		HTTPEndpoint: "http://localhost:8001/nlu",
+		GRPCEndpoint: "localhost:50052",
+	}
+	client := NewClient(config)
 	
 	// 测试用例1: 设置温度为25摄氏度
 	input := &Input{
@@ -91,7 +108,13 @@ func TestPredictSetTemperature(t *testing.T) {
 }
 
 func TestPredictPlayMusic(t *testing.T) {
-	client := NewClient(endpoint)
+	config := Config{
+		Model:        "local",
+		Protocol:     ProtocolHTTP,
+		HTTPEndpoint: "http://localhost:8001/nlu",
+		GRPCEndpoint: "localhost:50052",
+	}
+	client := NewClient(config)
 	
 	// 测试用例1: 我想听音乐
 	input := &Input{
@@ -119,7 +142,13 @@ func TestPredictPlayMusic(t *testing.T) {
 }
 
 func TestPredictChitChat(t *testing.T) {
-	client := NewClient(endpoint)
+	config := Config{
+		Model:        "local",
+		Protocol:     ProtocolHTTP,
+		HTTPEndpoint: "http://localhost:8001/nlu",
+		GRPCEndpoint: "localhost:50052",
+	}
+	client := NewClient(config)
 	
 	// 测试用例1: 你好啊
 	input := &Input{
@@ -147,7 +176,13 @@ func TestPredictChitChat(t *testing.T) {
 }
 
 func TestPredictDenyAction(t *testing.T) {
-	client := NewClient(endpoint)
+	config := Config{
+		Model:        "local",
+		Protocol:     ProtocolHTTP,
+		HTTPEndpoint: "http://localhost:8001/nlu",
+		GRPCEndpoint: "localhost:50052",
+	}
+	client := NewClient(config)
 	
 	// 测试用例1: 不需要开空调
 	input := &Input{

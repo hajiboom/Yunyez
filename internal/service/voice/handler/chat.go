@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"sync/atomic"
 	"time"
+
 	config "yunyez/internal/common/config"
 	constant "yunyez/internal/common/constant"
 	tools "yunyez/internal/common/tools"
@@ -30,13 +31,19 @@ import (
 )
 
 var (
-	asrModel  = config.GetString("asr.model")   // default asr model
-	nluModel  = config.GetString("nlu.model")   // default nlu model
-	chatModel = config.GetString("agent.model") // default chat model： qwen
-	ttsModel  = config.GetString("tts.model")   // default tts model
+	asrModel     = config.GetString("asr.model")      // default asr model
+	asrProtocol  = config.GetString("asr.protocol")   // default asr protocol
+	nluModel     = config.GetString("nlu.model")      // default nlu model
+	nluProtocol  = config.GetString("nlu.protocol")   // default nlu protocol
+	chatModel    = config.GetString("agent.model")    // default chat model：qwen
+	ttsModel     = config.GetString("tts.model")      // default tts model
+	ttsProtocol  = config.GetString("tts.protocol")   // default tts protocol
 
-	asrEndpoint = config.GetString("asr.endpoint") // default asr endpoint
-	nluEndpoint = config.GetString("nlu.endpoint") // default nlu endpoint
+	asrHTTPEndpoint = config.GetString("asr.http_endpoint") // default asr http endpoint
+	asrGRPCEndpoint = config.GetString("asr.grpc_endpoint") // default asr grpc endpoint
+	nluHTTPEndpoint = config.GetString("nlu.http_endpoint") // default nlu http endpoint
+	nluGRPCEndpoint = config.GetString("nlu.grpc_endpoint") // default nlu grpc endpoint
+	ttsGRPCEndpoint = config.GetString("tts.grpc_endpoint") // default tts grpc endpoint
 
 	agentStrategy *llm.Strategy // llm model strategy
 
@@ -47,7 +54,7 @@ var (
 	publishCounter uint64 // TODO: 测试暂存序列号 记得移除
 )
 
-// 第三方api成本计算
+// 第三方 api 成本计算
 var (
 	model = config.GetString(fmt.Sprintf("%s.model", chatModel)) // qwen-flash
 	rules = map[string]metering.PricingRule{
@@ -61,16 +68,68 @@ var (
 )
 
 func init() {
-	// 初始化智能体模型
-	asrClient = asr.NewASRClient(asrModel, asrEndpoint) // init asr client
-	nluClient = nlu.NewClient(nluEndpoint)              // init nlu client
-
+	// 初始化 ASR 客户端
+	asrClient = initASRClient()
+	// 初始化 NLU 客户端
+	nluClient = initNLUClient()
+	// 初始化 LLM 策略
 	agentStrategy = &llm.Strategy{}
 	agentStrategy.SetAgent(chatModel)
-
-	ttsClient = tts.NewTTSClient() // init tts client
-	// init metering service
+	// 初始化 TTS 客户端
+	ttsClient = tts.CreateTTSClient()
+	// 初始化计费服务
 	meteringService = metering.Initialize(rules)
+}
+
+// initASRClient 初始化 ASR 客户端
+func initASRClient() asr.Service {
+	cfg := asr.Config{
+		Model:      asrModel,
+		Protocol:   asr.Protocol(asrProtocol),
+		HTTPEndpoint: asrHTTPEndpoint,
+		GRPCEndpoint: asrGRPCEndpoint,
+	}
+	client, err := asr.NewASRClient(cfg)
+	if err != nil {
+		logger.Error(context.Background(), "initASRClient failed", map[string]any{
+			"error": err.Error(),
+		})
+		return nil
+	}
+	return client
+}
+
+// initNLUClient 初始化 NLU 客户端
+func initNLUClient() nlu.Client {
+	cfg := nlu.Config{
+		Model:      nluModel,
+		Protocol:   nlu.Protocol(nluProtocol),
+		HTTPEndpoint: nluHTTPEndpoint,
+		GRPCEndpoint: nluGRPCEndpoint,
+	}
+	return nlu.NewClient(cfg)
+}
+
+// initTTSClient 初始化 TTS 客户端
+func initTTSClient() tts.Service {
+	cfg := tts.Config{
+		Model:      ttsModel,
+		Protocol:   tts.Protocol(ttsProtocol),
+		HTTPEndpoint: config.GetString("tts.edge.endpoint"),
+		GRPCEndpoint: ttsGRPCEndpoint,
+		Voice:      config.GetString("tts.edge.params.voice"),
+		Rate:       config.GetString("tts.edge.params.rate"),
+		Pitch:      config.GetString("tts.edge.params.pitch"),
+		Volume:     config.GetString("tts.edge.params.volume"),
+	}
+	client, err := tts.NewTTSClient(cfg)
+	if err != nil {
+		logger.Error(context.Background(), "initTTSClient failed", map[string]any{
+			"error": err.Error(),
+		})
+		return nil
+	}
+	return client
 }
 
 // ChatPipeline response the natural language conversation response
@@ -273,7 +332,7 @@ func Publish(ctx context.Context, clientID string, payload []byte) error {
 		"client_id":  clientID,
 	})
 
-	// TODO 发布MQTT消息
+	// TODO 发布 MQTT 消息
 	// TODO 开发测试目前先保留配置参数硬编码，记得移除
 	// test topic：test/T0001/A0001/voice/client
 	topic := mqttCore.Topic{ // TODO: get from device registry

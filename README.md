@@ -1,7 +1,5 @@
 # 云也子(Yunyez)
 
-# Yunyez · 云也子
-
 > **你安心看世界，我默默守着你。**
 
 Yunyez 是一个为**独自旅行者**设计的个人安全守护设备。它不是一个玩具，也不是另一个打卡 App，而是一个能在你无法操作手机时（如遇险、昏迷、被胁迫），**自动取证、静默报警、持续求救**的小助手；
@@ -32,10 +30,11 @@ Yunyez 是一个为**独自旅行者**设计的个人安全守护设备。它不
 | 层级       | 技术选型 |
 |------------|---------|
 | 设备端     | 树莓派 Zero 2W / ESP32-S3 + GPS + IMU + 摄像头 |
-| 通信协议   | MQTT（设备↔后端）、gRPC（Go↔Python 模型） |
+| 通信协议   | MQTT（设备↔后端）、gRPC/HTTP（Go↔Python 模型） |
 | 后端       | Go（业务逻辑） + Python（ASR/NLU/LLM/TTS 本地模型） |
 | 数据库     | PostgreSQL（含 PostGIS） + Redis |
 | 部署       | Docker Compose 一键启动，支持单机运行 |
+| AI 服务    | HTTP/gRPC 双模式，支持本地部署 |
 
 > 注：暂时不追求微服务、K8s 等复杂架构，聚焦功能闭环与真实体验。
 
@@ -139,7 +138,38 @@ psql -h localhost -U postgres -d yunyez -f sql/device/device.sql
 psql -h localhost -U postgres -d yunyez -f sql/agent/cost.sql
 ```
 
-### 3. 运行后端服务
+### 3. 启动 AI 服务
+
+AI 服务（ASR、NLU、TTS）支持 **HTTP** 和 **gRPC** 两种调用方式，通过环境变量切换。
+
+#### 开发环境（手动启动）
+
+```bash
+# HTTP 模式（默认）
+cd ai && ./start.sh
+
+# gRPC 模式
+export YUNYEZ_AI_TRANSPORT_MODE=grpc
+cd ai && ./start.sh
+```
+
+#### 生产环境（Docker 部署）
+
+```bash
+# HTTP 模式
+docker compose -f ai/docker-compose.yml --profile http up -d
+
+# gRPC 模式
+docker compose -f ai/docker-compose.yml --profile grpc up -d
+```
+
+| 服务 | HTTP 端口 | gRPC 端口 |
+|------|----------|----------|
+| NLU  | 8001     | 50051    |
+| ASR  | 8002     | 50052    |
+| TTS  | 8003     | 50053    |
+
+### 4. 运行后端服务
 
 ```bash
 # 安装 Go 依赖

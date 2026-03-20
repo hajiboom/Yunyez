@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package ai;
+
+option go_package = "yunyez/internal/pkg/types/pb/ai";
+
+import "common/types.proto";
+
+// ASR 语音识别服务
+service ASRService {
+  // 流式语音识别（推荐用于实时场景）
+  rpc StreamingRecognize(stream StreamingRecognizeRequest) returns (stream StreamingRecognizeResponse);
+
+  // 单次语音识别
+  rpc Recognize(RecognizeRequest) returns (RecognizeResponse);
+
+  // 健康检查
+  rpc Health(common.HealthRequest) returns (common.HealthResponse);
+}
+
+message StreamingRecognizeRequest {
+  oneof request {
+    StreamingRecognizeConfig config = 1;  // 配置信息（首包）
+    bytes audio_content = 2;               // 音频数据（后续包）
+  }
+}
+
+message StreamingRecognizeConfig {
+  string encoding = 1;      // 音频编码：LINEAR16_PCM, OPUS, AAC
+  int32 sample_rate = 2;    // 采样率：8000, 16000, 44100, 48000
+  int32 num_channels = 3;   // 声道数：1=单声道，2=立体声
+  string language_code = 4; // 语言：zh-CN, en-US
+}
+
+message StreamingRecognizeResponse {
+  oneof result {
+    StreamingRecognitionResult recognition_result = 1;  // 识别结果
+    common.Error error = 2;                              // 错误信息
+  }
+}
+
+message StreamingRecognitionResult {
+  string transcript = 1;     // 识别文本
+  float confidence = 2;      // 置信度 (0-1)
+  bool is_final = 3;         // 是否为最终结果
+  float stability = 4;       // 稳定性 (0-1)，仅中间结果有效
+}
+
+message RecognizeRequest {
+  bytes audio_content = 1;       // 音频数据（完整）
+  string encoding = 2;           // 音频编码
+  int32 sample_rate = 3;         // 采样率
+  int32 num_channels = 4;        // 声道数
+  string language_code = 5;      // 语言
+}
+
+message RecognizeResponse {
+  string transcript = 1;         // 识别文本
+  float confidence = 2;          // 置信度
+  common.Error error = 3;        // 错误信息
+}

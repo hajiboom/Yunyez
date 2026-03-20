@@ -1,0 +1,6 @@
+# 公共依赖 - 所有 AI 服务共用
+# 安装命令：conda activate nlp && pip install -r requirements-common.txt
+
+# gRPC
+grpcio==1.59.3
+grpcio-tools==1.59.3
