@@ -559,18 +559,199 @@ GET /api/v1/oauth/introspect?token={access_token}
 - 批量导入/导出用户
 - 密码找回（邮箱/短信验证码）
 
-### 8.2 Phase 3（P2）
+### 8.2 Phase 3（P2）- SSO 单点登录架构
+
+#### 8.2.1 架构演进方案
+
+**当前架构（Monolith Auth）**
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│  Admin端    │────▶│  Yunyez主服务 │────▶│  PostgreSQL │
+│  Open平台   │────▶│  (内置Auth)   │────▶│   Redis     │
+│  设备端     │────▶│               │     └─────────────┘
+└─────────────┘     └──────────────┘
+```
+
+**目标架构（独立用户中心 - User Center）**
+```
+┌─────────────┐     ┌──────────────┐     ┌──────────────┐
+│  Admin端    │────▶│  API Gateway │     │ 用户中心      │
+│  Open平台   │────▶│              │────▶│ (User Center)│
+│  设备端     │────▶│              │     │  - SSO Server │
+└─────────────┘     └──────────────┘     │  - Auth Svc   │
+                                          │  - OAuth2/OIDC│
+┌─────────────┐     ┌──────────────┐     └──────────────┘
+│  3D重建服务 │────▶│  API Gateway │           │
+│  音频服务   │────▶│              │───────────┤
+│  视频服务   │────▶│              │           ▼
+└─────────────┘     └──────────────┘     ┌──────────────┐
+                                          │  PostgreSQL  │
+                                          │   Redis      │
+                                          └──────────────┘
+```
+
+#### 8.2.2 SSO 技术方案选型
+
+| 方案 | 适用场景 | 复杂度 | 推荐度 |
+|------|---------|--------|--------|
+| **OIDC (OpenID Connect)** | 现代Web应用、移动端 | 中 | ⭐⭐⭐⭐⭐ |
+| **SAML 2.0** | 企业级、传统系统 | 高 | ⭐⭐⭐ |
+| **CAS** | 简单Web SSO | 低 | ⭐⭐⭐ |
+| **自定义 Token 共享** | 同域系统 | 低 | ⭐⭐ |
+
+**推荐方案：OIDC (基于 OAuth 2.0)**
+- 标准化程度高，业界最佳实践
+- 支持现代认证场景（MFA、生物识别等）
+- 与现有 OAuth2 架构平滑演进
+- 良好的跨语言/跨平台支持
+
+#### 8.2.3 微服务认证流程
+
+**方案A：API Gateway 统一认证（推荐）**
+
+```
+用户请求 → API Gateway (验证JWT) → 路由到微服务
+                                  ↓
+                          微服务信任 Gateway
+                          - 从 Header 提取用户信息
+                          - X-User-Id: {user_id}
+                          - X-User-Role: {role}
+                          - 可选：二次验证 JWT
+```
+
+**流程说明：**
+1. 用户首次访问 → Gateway 重定向到 SSO Server
+2. SSO Server 完成认证 → 签发 JWT + ID Token
+3. Gateway 验证 Token → 注入用户信息到请求头 → 转发到微服务
+4. 微服务信任 Gateway 传递的用户信息（内部网络隔离保证安全）
+
+**方案B：服务间 Token 传递（适合高安全场景）**
+
+```
+用户请求 → API Gateway (验证JWT) → 微服务A (验证JWT) → 微服务B (验证JWT)
+```
+
+**流程说明：**
+1. Gateway 验证 JWT 合法性
+2. 微服务独立验证 JWT（共享公钥或Secret）
+3. 每个服务独立鉴权，零信任架构
+
+#### 8.2.4 用户中心（User Center）模块设计
+
+```
+user-center/
+├── sso-server/          # SSO 认证服务器
+│   ├── login/           # 统一登录页面
+│   ├── mfa/             # 多因素认证
+│   └── session/         # 会话管理
+├── auth-service/        # 认证服务
+│   ├── jwt/             # JWT 签发/验证
+│   ├── oauth2/          # OAuth2 授权
+│   └── oidc/            # OIDC 协议实现
+├── user-service/        # 用户管理服务
+│   ├── crud/            # 用户CRUD
+│   ├── role/            # 角色权限
+│   └── profile/         # 用户资料
+└── audit-service/       # 审计日志服务
+    ├── login-log/       # 登录日志
+    └── operation-log/   # 操作日志
+```
+
+#### 8.2.5 当前项目改造步骤
+
+**阶段一：内部解耦（2周）**
+1. 提取 `internal/middleware/auth.go` 为独立认证包
+2. 抽象 JWT 验证接口，支持多Secret/公钥
+3. 添加 Token  introspection（自检）端点
+4. 创建 `internal/service/auth/` 独立认证服务层
+
+**阶段二：外部化用户中心（4周）**
+1. 新建 `user-center` 独立服务（可放在 `api/user-center/`）
+2. 迁移用户表、角色表、登录逻辑到用户中心
+3. 实现 OIDC Provider（或使用 Keycloak/Casdoor）
+4. 主服务通过 HTTP/gRPC 调用用户中心验证 Token
+
+**阶段三：Gateway 集成（2周）**
+1. 部署 API Gateway（推荐：APISIX/Kong/Traefik）
+2. 配置 Gateway OIDC 插件
+3. 微服务信任 Gateway 传递的用户信息
+4. 灰度迁移，逐步切换流量
+
+#### 8.2.6 Middleware 改造建议
+
+**当前架构问题：**
+```go
+// 当前：硬编码单个 Secret
+AuthMiddleware(jwtSecret)
+```
+
+**改造后：支持多租户/多服务验证**
+```go
+// 方案A：多Secret支持（过渡期）
+AuthMiddleware(AuthConfig{
+    Secrets: map[string]string{
+        "admin": adminSecret,
+        "open":  openSecret,
+    },
+    PublicKey: oidcPublicKey,  // SSO公钥
+    BlacklistChecker: redisClient,
+})
+
+// 方案B：HTTP Introspection（微服务化）
+AuthMiddleware(AuthConfig{
+    IntrospectionURL: "http://user-center/oauth2/introspect",
+    ClientID:         "yunyez-main-service",
+    ClientSecret:     introspectionSecret,
+    CacheTTL:         5 * time.Minute,  // 本地缓存减少RPC
+})
+```
+
+#### 8.2.7 技术选型对比
+
+| 组件 | 自研 | Keycloak | Casdoor | Authing（云） |
+|------|------|----------|---------|--------------|
+| **开发成本** | 高 | 低 | 中 | 无 |
+| **运维成本** | 中 | 高 | 中 | 无 |
+| **定制化** | 完全 | 受限 | 中等 | 受限 |
+| **OIDC支持** | 需开发 | 完整 | 完整 | 完整 |
+| **推荐场景** | 深度定制 | 企业级 | 中小型 | 快速上线 |
+
+**推荐：中期使用 Casdoor（开源、轻量、Go编写），长期可评估自研**
+
+### 8.3 Phase 3（其他P2功能）
 - OAuth2 授权码模式完整实现
-- SSO 单点登录（SAML/OIDC）
 - 二次验证（TOTP/短信/邮箱）
 - 设备端免密登录
 - 异地登录告警
 
-### 8.3 技术优化
+### 8.4 技术优化
 - JWT 签名算法升级 RS256（非对称加密）
 - Redis Cluster 支持高可用
 - 数据库读写分离
 - Token 自动续期（滑动窗口）
+
+---
+
+## 9. SSO 集成检查清单
+
+### 9.1 代码层面
+- [ ] 抽象 JWT 验证逻辑，支持多Secret/公钥
+- [ ] 添加 Token introspection 客户端
+- [ ] 中间件支持可配置认证源（本地/远程）
+- [ ] 用户信息从 Token Claims 标准化提取
+- [ ] 错误码统一，便于 Gateway 处理
+
+### 9.2 架构层面
+- [ ] 评估 API Gateway 方案（APISIX/Kong）
+- [ ] 设计服务间信任链（mTLS/Header信任）
+- [ ] 规划网络隔离（用户中心独立部署）
+- [ ] 设计灰度迁移方案
+
+### 9.3 安全层面
+- [ ] 评估 RS256 非对称加密迁移
+- [ ] 设计公钥轮换机制
+- [ ] 审计日志集中化
+- [ ] 敏感操作二次验证
 
 ---
 

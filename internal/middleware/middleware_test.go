@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
+	authpkg "yunyez/internal/pkg/auth"
+
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
@@ -90,26 +91,37 @@ func TestRateLimitMiddleware(t *testing.T) {
 
 func TestAuthMiddleware(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	
+
 	secret := "test-secret"
 	
-	// 创建一个有效的token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": 123,
-		"exp":     time.Now().Add(time.Hour).Unix(),
+	// 创建 JWT 管理器
+	jwtManager := authpkg.NewJWTManager(authpkg.JWTConfig{
+		AccessSecret: secret,
+		AccessExpire: 3600,
+		Issuer:       "test",
 	})
-	validToken, _ := token.SignedString([]byte(secret))
+
+	// 创建一个有效的token
+	claims := authpkg.StandardClaims{
+		UserID:   123,
+		Username: "testuser",
+	}
+	tokenPair, err := jwtManager.GenerateTokenPair(claims, false)
+	assert.NoError(t, err)
 
 	r := gin.New()
-	r.Use(AuthMiddleware(secret))
-	
+	cfg := AuthMiddlewareConfig{
+		JWTManager: jwtManager,
+	}
+	r.Use(AuthMiddleware(cfg))
+
 	r.GET("/protected", func(c *gin.Context) {
 		c.String(http.StatusOK, "Protected resource")
 	})
 
 	// 测试有效token
 	req1, _ := http.NewRequest("GET", "/protected", nil)
-	req1.Header.Set("Authorization", "Bearer "+validToken)
+	req1.Header.Set("Authorization", "Bearer "+tokenPair.AccessToken)
 	w1 := httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
 	assert.Equal(t, http.StatusOK, w1.Code)
@@ -133,5 +145,5 @@ func TestSetupMiddlewares(t *testing.T) {
 	defer logger.Sync()
 
 	middlewares := SetupMiddlewares()
-	assert.Len(t, middlewares, 6) // 应该有6个中间件
+	assert.Len(t, middlewares, 5) // 应该有5个中间件 (移除了全局 AuthMiddleware)
 }
