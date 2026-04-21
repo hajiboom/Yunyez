@@ -84,7 +84,12 @@
 <script setup>
 import { ref } from 'vue'
 import { UserFilled } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router' // 补充导入router（否则handleLogout会报错）
+import { useRouter } from 'vue-router' 
+import { useAuthStore } from '@/store/authStore.js'
+import { ERROR_CODES, ERROR_MESSAGES } from '@/utils/codes'
+
+const loginStore = useLoginStore()
+const authStore = useAuthStore()
 
 const router = useRouter() // 初始化router
 const isCollapse = ref(true)
@@ -94,13 +99,17 @@ const handleOpen = (key, keyPath) => {
 const handleClose = (key, keyPath) => {
   console.log(key, keyPath)
 }
-const handleLogout = () => {
-  router.push({ name: 'Login' })
+const handleLogout = async () => {
+  const res = await loginStore.logout()
+  if (res.code === ERROR_CODES.SUCCESS) {
+    ElMessage.success('退出成功')
+    router.push({ name: 'Login' })
+  }
 }
 </script>
 
 <style scoped lang="scss">
-// 关键：给el-aside设置Flex垂直布局，占满高度
+
 :deep(.sidebar-aside) {
   display: flex;
   flex-direction: column; // 垂直排列
@@ -124,12 +133,12 @@ const handleLogout = () => {
 .sidebar-header {
   display: flex;
   align-items: center;
-  padding: 0 1rem 1rem;
+  padding: 0 16px 16px;
   border-bottom: 1px solid #eee;
-  gap: 0.5rem;
-  margin-top: 1rem; // 原来的el-aside的margin-top移到这里
+  gap: 10px;
+  margin-top: 16px; // 原来的el-aside的margin-top移到这里
   .iconfont {
-    font-size: 1.5rem;
+    font-size: 24px;
     padding: 4%;
     border-radius: 10px;
     background-color: #1729f1;
@@ -137,12 +146,12 @@ const handleLogout = () => {
   }
   .sidebar-title {
     .app-name {
-      font-size: 1rem;
+      font-size: 16px;
       font-weight: 600;
       color: #333;
     }
     .app-desc {
-      font-size: 0.9rem;
+      font-size: 15px;
       color: #999;
     }
   }

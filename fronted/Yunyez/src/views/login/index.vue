@@ -13,41 +13,18 @@
         </div>
       </div>
       <!-- 登录表单（带基础校验） -->
-      <el-form 
-        :model="loginForm" 
-        :rules="loginRules" 
-        ref="loginFormRef" 
-        class="login-form"
-      >
+      <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef" class="login-form">
         <el-form-item prop="username" label="用户名" label-position="top">
-          <el-input
-            v-model="loginForm.username"
-            placeholder="请输入用户名"
-            :prefix-icon="User" 
-            size="large"
-           
-          />
+          <el-input autocomplete="off" v-model="loginForm.username" placeholder="请输入用户名" :prefix-icon="User" size="large" />
         </el-form-item>
 
         <el-form-item prop="password" label="密码" label-position="top">
-          <el-input
-            v-model="loginForm.password"
-            type="password"
-            placeholder="请输入密码"
-            :prefix-icon="Lock"
-            size="large"
-          />
+          <el-input autocomplete="off" v-model="loginForm.password" type="password" placeholder="请输入密码" :prefix-icon="Lock" size="large" />
         </el-form-item>
 
         <!-- 登录按钮 -->
         <el-form-item>
-          <el-button
-            type="primary"
-            class="login-btn"
-            size="large"
-            @click="submitLogin"
-            
-          >
+          <el-button type="primary" class="login-btn" size="large" @click="submitLogin">
             登 录
           </el-button>
         </el-form-item>
@@ -57,9 +34,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { User, Lock } from '@element-plus/icons-vue'
-import{useRouter} from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useLoginStore } from '@/store/login'
+import { useRouter } from 'vue-router'
+import {User,Lock} from '@element-plus/icons-vue'
+import {encryptRsa} from '@/utils/encrypt'
+
+
+
 // 1. 路由实例（用于跳转）
 const router = useRouter()
 
@@ -69,38 +51,52 @@ const loginFormRef = ref()
 // 2. 表单数据
 const loginForm = ref({
   username: '',
-  password: ''
+  password: '',
+  remember: false
 })
+
+// 2. 登录状态管理
+const loginStore = useLoginStore()
+
 
 // 3. 表单校验规则
 const loginRules = ref({
   username: [
-    {  message: '请输入用户名', trigger: 'blur' },
+     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
   ],
   password: [
-    {  message: '请输入密码', trigger: 'blur' },
+    { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 6, message: '密码长度不少于 6 个字符', trigger: 'blur' }
   ]
 })
 
 // 4. 登录提交逻辑
 const submitLogin = async () => {
-  // if (!loginFormRef.value) return
-  // try {
-  //   // 先做表单校验
-  //   const valid = await loginFormRef.value.validate()
-  //   if (valid) {
-  //     // 校验通过，执行登录逻辑（替换为你的实际接口）
-  //     console.log('登录参数：', loginForm.value)
+  if (!loginFormRef.value) return
+  try {
+    // 先做表单校验
+    const valid = await loginFormRef.value.validate()
+    if (valid) {
+      //加密信息
+      const transportData=ref({
+        transUsername:'',
+        transPassword:''
+      })
+     transportData.value.transUsername = encryptRsa(loginForm.value.username)
+     transportData.value.transPassword = encryptRsa(loginForm.value.password)
+    
+     const res = await loginStore.login(transportData.value)
 
-  //     router.push({name:'Dashboard'})
-  //   }
-  // } catch (error) {
-  //   console.error('表单校验失败：', error)
-  //   return false
-  // }
-  router.push({name:'Dashboard'})
+      if (res.code === ErrorCode.SUCCESS) {
+        router.push({ name: 'Dashboard' })
+      }
+    }
+  } catch (error) {
+    const errorMsg = error?.message || '登录失败，请检查网络或账号密码'
+    // 若使用 Element Plus
+    ElMessage.error(errorMsg)
+  }
 }
 </script>
 <style scoped lang="scss">
@@ -109,12 +105,14 @@ const submitLogin = async () => {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   /* 替换为你的背景图路径（public 文件夹下直接写 /xxx.jpg） */
   background-image: url("./assets/loginbak.jpg");
-  background-size: cover;    /* 铺满容器，保持比例 */
-  background-position: center; /* 居中显示 */
+  background-size: cover;
+  /* 铺满容器，保持比例 */
+  background-position: center;
+  /* 居中显示 */
   background-repeat: no-repeat;
   display: flex;
   justify-content: center;
@@ -129,10 +127,11 @@ const submitLogin = async () => {
   width: 28%;
   padding: 1% 3%;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.95); /* 半透明白底，提升对比 */
+  background: rgba(255, 255, 255, 0.95);
+  /* 半透明白底，提升对比 */
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   border: none;
-  min-width:20rem;
+  min-width: 320px;
 }
 
 /* 头部图标+标题 */
@@ -141,18 +140,20 @@ const submitLogin = async () => {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  i{
-    font-size:2rem;
- background: linear-gradient(to right, #409eff, #f97316);  border: none;
-    color:#e6e6e6;
+  gap: 10px;
+  margin-bottom: 32px;
+
+  i {
+    font-size: 32px;
+    background: linear-gradient(to right, #409eff, #f97316);
+    border: none;
+    color: #e6e6e6;
     padding: 1%;
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 3rem;
-    height:3rem;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
   }
 }
@@ -160,32 +161,36 @@ const submitLogin = async () => {
 .title-group {
   text-align: center;
 }
+
 .main-title {
-  font-size: 1.5rem;
+  font-size: 20px;
   font-weight: 600;
   color: #1f2937;
 }
+
 .sub-title {
-  font-size: 1rem;
+  font-size: 16px;
   color: #6b7280;
   margin-top: 4px;
 }
 
 /* 表单样式 */
 .login-form {
-  margin-top: 1rem;
+  margin-top: -29px;
 }
 
 /* 登录按钮 */
 .login-btn {
   width: 100%;
-  height: 3rem;
-  font-size: 1rem;
- background: linear-gradient(to right, #409eff, #f97316);  border: none;
+  height: 48px;
+  font-size: 16px;
+  background: linear-gradient(to right, #409eff, #f97316);
+  border: none;
   border-radius: 8px;
   margin-top: 5%;
 }
-.login-btn:hover {
- background: linear-gradient(to right, #409eff, #f97316);}
 
+.login-btn:hover {
+  background: linear-gradient(to right, #409eff, #f97316);
+}
 </style>
