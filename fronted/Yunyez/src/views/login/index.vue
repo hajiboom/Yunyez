@@ -39,7 +39,7 @@ import { useLoginStore } from '@/store/login'
 import { useRouter } from 'vue-router'
 import {User,Lock} from '@element-plus/icons-vue'
 import {encryptRsa} from '@/utils/encrypt'
-import {ErrorCode} from '@/utils/errorCode'
+import {ERROR_CODES,ERROR_MESSAGES} from '@/utils/codes'
 
 
 
@@ -89,7 +89,7 @@ const submitLogin = async () => {
     
      const res = await loginStore.login(transportData.value)
 
-      if (res.code === ErrorCode.SUCCESS) {
+      if (res.code === ERROR_CODES.SUCCESS) {
         router.push({ name: 'Dashboard' })
       }
     }

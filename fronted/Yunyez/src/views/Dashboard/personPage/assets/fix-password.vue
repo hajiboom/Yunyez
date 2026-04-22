@@ -97,6 +97,9 @@ const rules = reactive({
 // 关闭弹窗
 const closeModal = () => {
   emit('closeModal')
+   pwdForm.oldPassword = ''
+      pwdForm.newPassword = ''
+      pwdForm.confirmPassword = ''
 }
 
 // 提交修改密码
@@ -110,10 +113,12 @@ const submitPassword = async () => {
     
     // 校验通过，执行提交逻辑
     //加密数据
-    pwdForm.oldPassword = encryptRsa(pwdForm.oldPassword)
-    pwdForm.newPassword =  encryptRsa(pwdForm.newPassword)
-    pwdForm.confirmPassword =  encryptRsa(pwdForm.confirmPassword)
-    const res = await loginStore.fixPassword(pwdForm)
+    const transportData = {
+      oldPassword:  encryptRsa(pwdForm.oldPassword),
+      newPassword:  encryptRsa(pwdForm.newPassword),
+      confirmPassword:  encryptRsa(pwdForm.confirmPassword)
+    }
+    const res = await loginStore.fixPassword(transportData)
     if (res.code === ERROR_CODES.SUCCESS) {
       ElMessage.success('密码修改成功')
       //清空表单数据
