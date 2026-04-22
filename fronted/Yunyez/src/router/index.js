@@ -18,6 +18,11 @@ const router = createRouter({
           path: '/deviceManage',
           name: 'DeviceManage',
           component: () => import('@/views/Dashboard/deviceManage/index.vue')
+        },
+        {
+          path: '/personPage',
+          name: 'personPage',
+          component: () => import('@/views/Dashboard/personPage/index.vue')
         }
       ]
     },

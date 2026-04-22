@@ -25,11 +25,34 @@ export function getUserInfo() {
   })
 }
 /**
+ * 根据用户角色获取用户权限
+ */
+export function getUserMenusByRoleId(roleId) {
+  return request({
+    url: '/auth/menus/' + roleId,
+    method: 'get',
+  })
+}
+
+
+
+/**
  * 登出
  */
 export function logout() {
   return request({
     url: '/auth/logout',
     method: 'post',
+  })
+}
+/**
+ * 修改密码
+ */
+
+export function fixPassword(data) {
+  return request({
+    url: '/auth/fixPassword',
+    method: 'post',
+    data: data,
   })
 }

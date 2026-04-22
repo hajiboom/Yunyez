@@ -39,6 +39,7 @@ import { useLoginStore } from '@/store/login'
 import { useRouter } from 'vue-router'
 import {User,Lock} from '@element-plus/icons-vue'
 import {encryptRsa} from '@/utils/encrypt'
+import {ErrorCode} from '@/utils/errorCode'
 
 
 
@@ -66,7 +67,7 @@ const loginRules = ref({
     { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不少于 6 个字符', trigger: 'blur' }
   ]
 })

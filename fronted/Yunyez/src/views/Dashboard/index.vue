@@ -65,7 +65,7 @@
         <!-- 底部用户+退出区域（关键：通过auto贴底） -->
         <div class="sidebar-footer">
           <!-- 用户信息 -->
-          <div class="user-info">
+          <div class="user-info" @click="handleUserClick">
             <el-avatar :icon="UserFilled" style="width: 30px;height: 30px;"/>
             <span class="username">123123</span>
           </div>
@@ -85,11 +85,11 @@
 import { ref } from 'vue'
 import { UserFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router' 
-import { useAuthStore } from '@/store/authStore.js'
+import { useLoginStore } from '@/store/login.js'
 import { ERROR_CODES, ERROR_MESSAGES } from '@/utils/codes'
 
 const loginStore = useLoginStore()
-const authStore = useAuthStore()
+
 
 const router = useRouter() // 初始化router
 const isCollapse = ref(true)
@@ -105,6 +105,10 @@ const handleLogout = async () => {
     ElMessage.success('退出成功')
     router.push({ name: 'Login' })
   }
+}
+
+const handleUserClick = () => {
+  router.push({ name: 'personPage' })
 }
 </script>
 
@@ -184,6 +188,8 @@ const handleLogout = async () => {
     align-items: center;
     gap: 5px;
     padding: 8px 0;
+    cursor: pointer;
+    
     .username {
       font-size: 14px;
       color: #666;

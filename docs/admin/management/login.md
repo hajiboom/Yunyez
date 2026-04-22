@@ -586,3 +586,11 @@ GET /api/v1/oauth/introspect?token={access_token}
 - RFC 7519 - JSON Web Token (JWT)
 - RFC 6749 - OAuth 2.0 Authorization Framework
 - bcrypt 密码加密标准
+
+
+
+
+
+2026.4.22  进度：目前写了登录校验，无感刷新，修改密码（强度校验，登录次数限制前端只是做了提示），登出。
+
+权限校验没有详细设计文档，接口数据格式以及内容。角色管理部分详细文档也没有。
