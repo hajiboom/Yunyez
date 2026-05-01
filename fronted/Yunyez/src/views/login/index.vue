@@ -40,12 +40,13 @@ import { useRouter } from 'vue-router'
 import {User,Lock} from '@element-plus/icons-vue'
 import {encryptRsa} from '@/utils/encrypt'
 import {ERROR_CODES,ERROR_MESSAGES} from '@/utils/codes'
-
-
+import { useRoute } from 'vue-router'
+import { mapMenusToRoutes } from '@/utils/map-menus.js'
+import {getUserInfo, getUserMenusByRoleId} from '@/api/login/login.js'
 
 // 1. 路由实例（用于跳转）
 const router = useRouter()
-
+const routes = useRoute()
 // 1. 表单实例（用于校验）
 const loginFormRef = ref()
 
@@ -73,31 +74,56 @@ const loginRules = ref({
 })
 
 // 4. 登录提交逻辑
-const submitLogin = async () => {
+async function submitLogin() {
   if (!loginFormRef.value) return
-  try {
-    // 先做表单校验
-    const valid = await loginFormRef.value.validate()
-    if (valid) {
-      //加密信息
-      const transportData=ref({
-        transUsername:'',
-        transPassword:''
-      })
-     transportData.value.transUsername = encryptRsa(loginForm.value.username)
-     transportData.value.transPassword = encryptRsa(loginForm.value.password)
-    
-     const res = await loginStore.login(transportData.value)
 
-      if (res.code === ERROR_CODES.SUCCESS) {
-        router.push({ name: 'Dashboard' })
-      }
-    }
-  } catch (error) {
-    const errorMsg = error?.message || '登录失败，请检查网络或账号密码'
-    // 若使用 Element Plus
-    ElMessage.error(errorMsg)
-  }
+//测试权限菜单
+const valid = await loginFormRef.value.validate()
+if(valid){
+const menuData = await  getUserMenusByRoleId(1)
+const userInfo = await getUserInfo(1)
+localStorage.setItem('menuData', JSON.stringify(menuData.data.data))
+localStorage.setItem('userInfo', JSON.stringify(userInfo.data))
+  //动态添加路由，页面刷新之后会丢失，只会执行router里面的内容
+      const routes = mapMenusToRoutes(menuData.data.data)
+      console.log(routes,"配到的的权限路由");
+     routes.forEach(route => router.addRoute(route))
+      console.log(router.getRoutes(),"已注册路由");
+      
+router.push('/main')
+
+
+
+
+      
+}
+
+
+
+
+  // try {
+  //   // 先做表单校验
+  //   const valid = await loginFormRef.value.validate()
+  //   if (valid) {
+  //     //加密信息
+  //     const transportData=ref({
+  //       transUsername:'',
+  //       transPassword:''
+  //     })
+  //    transportData.value.transUsername = encryptRsa(loginForm.value.username)
+  //    transportData.value.transPassword = encryptRsa(loginForm.value.password)
+    
+  //    const res = await loginStore.login(transportData.value)
+
+  //     if (res.code === ERROR_CODES.SUCCESS) {
+  //       router.push({ name: 'Dashboard' })
+  //     }
+  //   }
+  // } catch (error) {
+  //   const errorMsg = error?.message || '登录失败，请检查网络或账号密码'
+  //   // 若使用 Element Plus
+  //   ElMessage.error(errorMsg)
+  // }
 }
 </script>
 <style scoped lang="scss">

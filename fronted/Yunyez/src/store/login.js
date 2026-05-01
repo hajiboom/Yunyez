@@ -1,35 +1,35 @@
 import { defineStore } from 'pinia'
-import { login,logout,fixPassword,getUserInfo,getUserMenusByRoleId } from '@/api/login/login.js'
+import { login, logout, fixPassword, getUserInfo, getUserMenusByRoleId } from '@/api/login/login.js'
 import { ERROR_CODES, ERROR_MESSAGES } from '@/utils/codes'
 import { ElMessage } from 'element-plus'
-
+import { mapMenusToRoutes } from '@/utils/map-menus.js'
+import router from '@/router'
 
 export const useLoginStore = defineStore('login', {
   state: () => ({
-   userMenus: [], 
+   menuData: [],
     userInfo: {},
     permissions: []
   }),
   actions: {
     async login(data) {
-      const res = await login(data)
-      if (res.code === ERROR_CODES.SUCCESS) {
-        // 登录成功，将token存储到localStorage
-        localStorage.setItem('token', res.data.accessToken)
-      //   //获取用户资料
-      //   const userInfo = await getUserInfo()
-      //   this.userInfo = userInfo.data
-      //   //根据用户角色请求用户权限
-      // const userMenusResult = await getUserMenusByRoleId(this.userInfo.role.id)
-      // this.userMenus = userMenusResult.data
-      // //本地存储
-      // localCache.setCache('userInfo', this.userInfo)
-      // localCache.setCache('userMenus', this.userMenus)
-      
-      ElMessage.success('登录成功')
-      }else{
-        ElMessage.error(res.message)
+      //先测试登录成功之后获取数据
+      try {
+        const menuData = await getUserMenusByRoleId(1)
+        const userInfo = await getUserInfo(1)
+        localStorage.setItem('menuData', JSON.stringify(menuData.data.data))
+        localStorage.setItem('userInfo', JSON.stringify(userInfo.data))
+      } catch (error) {
+        ElMessage.error(error.message || '获取用户菜单失败')
+        return
       }
+      //动态添加路由，页面刷新之后会丢失，只会执行router里面的内容
+      const routes = mapMenusToRoutes(menuData.data.data)
+      console.log(routes, "配到的的权限路由");
+      routes.forEach(route => router.addRoute(route))
+      console.log(router.getRoutes(), "已注册路由");
+      router.push('/main')
+
     },
     async logout() {
       const res = await logout()
@@ -38,7 +38,7 @@ export const useLoginStore = defineStore('login', {
         // 登出成功，清除localStorage中的token
         localStorage.removeItem('token')
         ElMessage.success('登出成功')
-        window.location.href = '/'
+        window.location.href = '/login'
       }
     },
     async fixPassword(data) {
@@ -47,6 +47,20 @@ export const useLoginStore = defineStore('login', {
         ElMessage.success('密码修改成功')
       } else {
         ElMessage.error(res.message || '密码修改失败')
+      }
+    },
+    loadLocalCacheAction() {
+      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')  ?? {}
+      const userMenus = JSON.parse(localStorage.getItem('menuData') || '[]') ?? []
+      if (userInfo.id && userMenus.length) {
+        // this.token = token
+        this.userInfo = userInfo
+        this.menuData = userMenus
+        //动态添加路由实时挂到 name 为 main 的菜单下”
+        const routes = mapMenusToRoutes(this.menuData)
+        routes.forEach((route) =>
+          router.addRoute('main', route)
+        )
       }
     }
   }
