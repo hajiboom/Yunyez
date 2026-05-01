@@ -1,6 +1,6 @@
 // api/auth.js
 import request from '@/utils/request'
-
+import service from "@/mock/requestMock"
 /**
  * 登录 - 使用 HttpOnly Cookie
  * @param {Object} data - { username, password, rememberMe }
@@ -10,28 +10,17 @@ export function login(data) {
   return request({
     url: '/login',
     method: 'post',
-    data: data,                    // 改为 data，params 用于 GET
+    data: data,                    
   })
 }
 
-/**
- * 获取当前登录用户信息（用于页面刷新后恢复状态）
- */
-export function getUserInfo() {
-  return request({
-    url: '/auth/info',
-    method: 'get',
-    
-  })
+
+export function getUserInfo(id) {
+  return service.get('/auth/info/', { params: { id } })
 }
-/**
- * 根据用户角色获取用户权限
- */
-export function getUserMenusByRoleId(roleId) {
-  return request({
-    url: '/auth/menus/' + roleId,
-    method: 'get',
-  })
+
+export function getUserMenusByRoleId(id) {
+  return service.get('/auth/menus/', { params: { id } })
 }
 
 

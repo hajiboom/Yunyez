@@ -101,7 +101,7 @@ request.interceptors.response.use(
               // refresh token 失效，清空 token，跳转登录
               removeToken()
               processQueue(new Error('Refresh token expired'), null)
-              window.location.href = '/'
+              window.location.href = '/login'
               return Promise.reject(new Error('请重新登录'))
             } else {
               // 其他刷新失败
@@ -114,7 +114,7 @@ request.interceptors.response.use(
             // 刷新请求本身失败（网络错误、500等）
             removeToken()
             processQueue(err, null)
-            window.location.href = '/'
+            window.location.href = '/login'
             return Promise.reject(err)
           })
           .finally(() => {
@@ -138,7 +138,7 @@ request.interceptors.response.use(
     if (response && response.status === 401) {
       // 可以复用上面的逻辑，或者统一跳转登录
       removeToken()
-      window.location.href = '/'
+      window.location.href = '/login'
     }
     return Promise.reject(error)
   }
