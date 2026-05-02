@@ -21,52 +21,16 @@ export let firstMenu = null;
 export const mapMenusToRoutes = (userMenus) => {
   const localRoutes = loadLocalRoutes();   // 加载本地定义的所有路由（如 /main/product/list）
   const routes = [];                        // 最终要添加的动态路由数组
-
-  // 递归遍历菜单树，返回当前菜单项下第一个有效子路由的路径（供父级重定向使用）
-  function traverse(menuList) {
-    let firstChildPath = null;              // 记录本层第一个匹配到的子路由路径
-
-    for (const menu of menuList) {
-      if (menu.children && menu.children.length) {
-        // 1. 非叶子节点：先递归处理子菜单
-        const childFirstPath = traverse(menu.children);
-        
-        // 2. 如果子菜单中有有效路由，且当前父节点尚未添加重定向，则添加
-        if (childFirstPath && !routes.find(route => route.path === menu.path)) {
-          routes.push({
-            path: menu.path,
-            redirect: childFirstPath
-          });
-        }
-        
-        // 3. 记录本层第一个有效路径（用于上层父级）
-        if (childFirstPath && firstChildPath === null) {
-          firstChildPath = childFirstPath;
-        }
-      } else {
-        // 叶子节点：匹配本地路由
-        const matchedRoute = localRoutes.find(route => route.path === menu.url);
-        if (matchedRoute) {
-          // 添加该子路由
-          routes.push(matchedRoute);
-          
-          // 记录全局第一个叶子菜单（用于默认激活）
-          if (!firstMenu) {
-            firstMenu = menu;
-          }
-          
-          // 返回该叶子路径给父级
-          if (firstChildPath === null) {
-            firstChildPath = menu.path;
-          }
-        }
-      }
+  for(const menu of userMenus) {
+    const route = localRoutes.find((item) => item.path === menu.url)
+    if(route){
+      routes.push(route);
     }
-    
-    return firstChildPath;   // 将本层第一个有效路径返回给上层调用
+     if (!firstMenu && route) {
+        firstMenu = menu
+      }
   }
 
-  traverse(userMenus);
   return routes;
 };
 
@@ -118,12 +82,12 @@ export const mapMenuListToIds = (menuList) => {
  * @returns 按钮权限映射对象
  */
 export const  mapMenuToPermissions = (buttonList) => {
-    const permissions = {};
+    const permissions = [];
     //递归遍历按钮列表，将所有子按钮的id添加到对象中
     function  recurseGetPermission(button) {
        for(const item of button) {
         if(item.type===3) {// type === 3 表示按钮权限,选出类型为“按钮权限”的节点
-            permissions.push(item.id);
+            permissions.push(item.permission);
         }else{
             recurseGetPermission(item.children?? []);
         }
@@ -132,6 +96,5 @@ export const  mapMenuToPermissions = (buttonList) => {
     recurseGetPermission(buttonList);
     return permissions;
 }
-
 
 

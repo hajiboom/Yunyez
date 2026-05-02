@@ -17,8 +17,16 @@ const router = createRouter({
     {
       path: '/main',
       name: 'main',
-      component: () => import('../views/main/main.vue')
-    },
+      component: () => import('../views/main/main.vue'),
+      children:[
+        {
+          path: 'personpage',
+          component: () => import('@/views/main/personpage/index.vue'),
+          meta: { title: '个人中心' }
+        }
+      ]
+    }
+   
   ]
 })
 
@@ -41,7 +49,7 @@ const router = createRouter({
 //     next('/login')  // 或 next({ name: 'Login' })
 //     return
 //   }
-  
+
 // })
 
 router.afterEach((to) => {

@@ -23,7 +23,6 @@ const tabsStore = useTabsStore()
 
 // 从 store 获取标签列表
 const visitedViews = computed(() => tabsStore.visitedViews)
-console.log(visitedViews.value,"visitedViews");
 
 // 双向绑定当前激活的标签路径
 const activeTabPath = computed({

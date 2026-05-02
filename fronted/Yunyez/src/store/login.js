@@ -2,12 +2,12 @@ import { defineStore } from 'pinia'
 import { login, logout, fixPassword, getUserInfo, getUserMenusByRoleId } from '@/api/login/login.js'
 import { ERROR_CODES, ERROR_MESSAGES } from '@/utils/codes'
 import { ElMessage } from 'element-plus'
-import { mapMenusToRoutes } from '@/utils/map-menus.js'
+import { mapMenusToRoutes, firstMenu, mapMenuToPermissions } from '@/utils/map-menus.js'
 import router from '@/router'
 
 export const useLoginStore = defineStore('login', {
   state: () => ({
-   menuData: [],
+    menuData: [],
     userInfo: {},
     permissions: []
   }),
@@ -19,24 +19,29 @@ export const useLoginStore = defineStore('login', {
         const userInfo = await getUserInfo(1)
         localStorage.setItem('menuData', JSON.stringify(menuData.data.data))
         localStorage.setItem('userInfo', JSON.stringify(userInfo.data))
+        this.permissions = mapMenuToPermissions(menuData.data.data)
+        
+        
+        //动态添加路由，页面刷新之后会丢失，只会执行router里面的内容
+        const routes = mapMenusToRoutes(menuData.data.data)
+        
+        routes.forEach(route => router.addRoute('main', route))
+
+
+        router.push(firstMenu.url)
       } catch (error) {
         ElMessage.error(error.message || '获取用户菜单失败')
         return
       }
-      //动态添加路由，页面刷新之后会丢失，只会执行router里面的内容
-      const routes = mapMenusToRoutes(menuData.data.data)
-      console.log(routes, "配到的的权限路由");
-      routes.forEach(route => router.addRoute(route))
-      console.log(router.getRoutes(), "已注册路由");
-      router.push('/main')
+
 
     },
     async logout() {
       const res = await logout()
-      const authStore = useAuthStore()
+
       if (res.code === ERROR_CODES.SUCCESS) {
-        // 登出成功，清除localStorage中的token
-        localStorage.removeItem('token')
+
+
         ElMessage.success('登出成功')
         window.location.href = '/login'
       }
@@ -50,8 +55,9 @@ export const useLoginStore = defineStore('login', {
       }
     },
     loadLocalCacheAction() {
-      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')  ?? {}
+      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}') ?? {}
       const userMenus = JSON.parse(localStorage.getItem('menuData') || '[]') ?? []
+      this.permissions = mapMenuToPermissions(userMenus)
       if (userInfo.id && userMenus.length) {
         // this.token = token
         this.userInfo = userInfo

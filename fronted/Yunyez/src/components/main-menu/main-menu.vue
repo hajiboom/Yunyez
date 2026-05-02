@@ -54,9 +54,7 @@ const defaultActive = computed(() => {
   return pathMenu?.id ? pathMenu.id + '' : ''
 })
 
-const handleItemClick = (item) => {
-  console.log(routes,"routes");
-  
+const handleItemClick = (item) => { 
   router.push(item.url)
 }
 </script>

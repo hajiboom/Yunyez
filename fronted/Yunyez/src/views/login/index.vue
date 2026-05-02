@@ -6,7 +6,7 @@
       <!-- 图标+标题 -->
       <div class="login-header">
         <!-- 替换为你的机器人图标实际路径（建议放 public 文件夹） -->
-        <i class="iconfont icon-jiqirenfushi"></i>
+         <i class="iconfont icon-xianluomao"></i>
         <div class="title-group">
           <div class="main-title">云也子AI机器人</div>
           <div class="sub-title">后台管理系统</div>
@@ -80,22 +80,15 @@ async function submitLogin() {
 //测试权限菜单
 const valid = await loginFormRef.value.validate()
 if(valid){
-const menuData = await  getUserMenusByRoleId(1)
-const userInfo = await getUserInfo(1)
-localStorage.setItem('menuData', JSON.stringify(menuData.data.data))
-localStorage.setItem('userInfo', JSON.stringify(userInfo.data))
-  //动态添加路由，页面刷新之后会丢失，只会执行router里面的内容
-      const routes = mapMenusToRoutes(menuData.data.data)
-      console.log(routes,"配到的的权限路由");
-     routes.forEach(route => router.addRoute(route))
-      console.log(router.getRoutes(),"已注册路由");
-      
-router.push('/main')
+  //加密信息
+  const transportData=ref({
+    transUsername:'',
+    transPassword:''
+  })
+  // transportData.value.transUsername = encryptRsa(loginForm.value.username)
+  // transportData.value.transPassword = encryptRsa(loginForm.value.password)
+loginStore.login(transportData.value)
 
-
-
-
-      
 }
 
 
@@ -215,9 +208,10 @@ router.push('/main')
   border: none;
   border-radius: 8px;
   margin-top: 5%;
+  transition: all 0.5s;
 }
 
 .login-btn:hover {
-  background: linear-gradient(to right, #409eff, #f97316);
+  transform: translateY(-2px);
 }
 </style>

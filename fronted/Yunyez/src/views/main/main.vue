@@ -28,7 +28,6 @@ import MainTabs from '@/components/main-tabs/main-tabs.vue'
 import MainHeader from '@/components/main-header/main-header.vue'
 import { useTabsStore } from '@/store/tabs'
 
-
 const tabsStore = useTabsStore()
 
 const isFold = ref(false)

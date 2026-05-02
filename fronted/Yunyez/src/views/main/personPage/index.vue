@@ -3,10 +3,10 @@
     <!-- 个人信息卡片 -->
     <div class="person-info">
       <div class="person-info-item">
-        <div class="avatar">黄</div>
+       <el-avatar :src="userInfo.avatar" :size="80"></el-avatar>
         <div class="name">
-          <h3>黄sir</h3>
-          <div class="user-role">超级管理员</div>
+          <h3 >{{ userInfo.name }}</h3>
+          <div class="user-role">{{ userInfo.role }}</div>
         </div>
       </div>
 
@@ -14,19 +14,15 @@
       <div class="info-list">
         <div class="info-row">
           <span class="info-label">手机号</span>
-          <span class="info-value">138****1234</span>
+          <span class="info-value">{{ userInfo.phone }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">邮箱</span>
-          <span class="info-value">huang.xiaoming@example.com</span>
+          <span class="info-value">{{ userInfo.email }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">部门</span>
-          <span class="info-value">技术研发中心</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">入职日期</span>
-          <span class="info-value">2023-04-01</span>
+          <span class="info-value">{{ userInfo.department }}</span>
         </div>
       </div>
 
@@ -45,14 +41,7 @@ import { reactive, ref } from 'vue'
 import FixPassword from './assets/fix-password.vue'
 
 // 用户信息
-const userInfo = reactive({
-  name: '黄小明',
-  role: '超级管理员',
-  phone: '138****1234',
-  email: 'huang.xiaoming@example.com',
-  department: '技术研发中心',
-  joinDate: '2023-04-01'
-})
+const userInfo = JSON.parse(localStorage.getItem('userInfo'))
 
 const modalVisible = ref(false)
 
@@ -72,7 +61,11 @@ const openChangePwdModal = () => {
   justify-content: center;
   align-items: flex-start;
 }
-
+.name{
+  h3{
+    text-align: center;
+  }
+}
 .person-info {
   
   width: 100%;

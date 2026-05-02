@@ -40,7 +40,12 @@ export const useTabsStore = defineStore('tabs', {
       this.activeTabPath = path
       router.push(path)
     },
-    // 关闭其他、关闭全部等（略）
+    // 清空所有标签
+    clearTabs() {
+      this.visitedViews = []
+      this.activeTabPath = ''
+    },
+    
   },
   // 可选：持久化
   // persist: true

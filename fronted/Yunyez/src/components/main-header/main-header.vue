@@ -16,8 +16,12 @@
     </div>
     <template #dropdown>
       <el-dropdown-menu>
+        <el-dropdown-item @click="handlePersonPage">
+          <i class="iconfont icon-gerenxinxi_o" style="font-size: 20px;"></i>
+          <span>个人信息</span>
+        </el-dropdown-item>
         <el-dropdown-item @click="handleLogout">
-          <el-icon><User /></el-icon>
+          <i class="iconfont icon-tuichu" style="font-size: 20px;"></i>
           <span>退出登录</span>
         </el-dropdown-item>
       </el-dropdown-menu>
@@ -32,7 +36,9 @@
 import { ref } from 'vue'
 import { ArrowDown, User } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { useTabsStore } from '@/store/tabs'
 
+const tabStore = useTabsStore()
 const router = useRouter()
 const userData = JSON.parse(localStorage.getItem('userInfo'))
 
@@ -45,8 +51,16 @@ const handleFoldChange = (flag) => {
 const handleLogout = () => {
     localStorage.removeItem('menuData')
     localStorage.removeItem('userInfo')
+    tabStore.clearTabs()
+
+
+
     router.push('/login')
 }
+const handlePersonPage = () => {
+    router.push('/main/personpage')
+}
+
 </script>
 
 <style scoped lang="scss">
