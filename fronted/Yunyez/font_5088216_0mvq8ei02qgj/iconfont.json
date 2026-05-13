@@ -6,6 +6,20 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "47534795",
+      "name": "声音-copy",
+      "font_class": "shengyin-copy",
+      "unicode": "ebcd",
+      "unicode_decimal": 60365
+    },
+    {
+      "icon_id": "26847644",
+      "name": "声音",
+      "font_class": "shengyin",
+      "unicode": "e665",
+      "unicode_decimal": 58981
+    },
+    {
       "icon_id": "5388070",
       "name": "个人信息_o",
       "font_class": "gerenxinxi_o",

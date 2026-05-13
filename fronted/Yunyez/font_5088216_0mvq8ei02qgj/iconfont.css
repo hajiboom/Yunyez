@@ -2,9 +2,9 @@
   font-family: "iconfont"; /* Project id 5088216 */
   /* Color fonts */
   src: 
-       url('iconfont.woff2?t=1777617886561') format('woff2'),
-       url('iconfont.woff?t=1777617886561') format('woff'),
-       url('iconfont.ttf?t=1777617886561') format('truetype');
+       url('iconfont.woff2?t=1778397518933') format('woff2'),
+       url('iconfont.woff?t=1778397518933') format('woff'),
+       url('iconfont.ttf?t=1778397518933') format('truetype');
 }
 
 .iconfont {
@@ -13,6 +13,14 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-shengyin-copy:before {
+  content: "\ebcd";
+}
+
+.icon-shengyin:before {
+  content: "\e665";
 }
 
 .icon-gerenxinxi_o:before {

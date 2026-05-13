@@ -42,7 +42,7 @@ defineProps({
 })
 
 const router = useRouter()
-const userMenus = JSON.parse(localStorage.getItem('menuData'))
+const userMenus = JSON.parse(localStorage.getItem('menuData')) || []
 
 
 const routes = mapMenusToRoutes(userMenus)

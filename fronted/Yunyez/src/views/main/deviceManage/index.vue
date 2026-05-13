@@ -37,7 +37,7 @@
           </template>
         </el-table-column>
         <!-- 2. 操作列：通过作用域插槽获取当前行数据 -->
-        <el-table-column label="操作" width="180">
+        <el-table-column label="操作" width="240">
           <!-- #default="scope" 是Element Plus的作用域插槽 -->
           <template #default="scope">
             <el-button type="primary" size="small" v-if="isUpdate">编辑</el-button>
@@ -48,6 +48,7 @@
               v-if="isDelete"
               >删除</el-button
             >
+            <el-button type="success" size="small" @click="handleVoiceCall(scope.row.sn)">语音接入</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -56,7 +57,13 @@
       :moduleVisible="moduleVisible"
       @update:moduleVisible="moduleVisible = false"
     />
+    <deviceVoicePop
+      :deviceVoiceVisible="deviceVoiceVisible"
+      :deviceSn="deviceSn"
+      @update:deviceVoiceVisible="deviceVoiceVisible = false"
+    />
     <div class="pagination" style="width: 100%;display: flex;justify-content: center;">
+      
       <el-pagination
   :current-page="currentPage"
   :page-size="pageSize"
@@ -79,7 +86,15 @@ import { storeToRefs } from "pinia";
 import dayjs from "dayjs";
 import addDevicePop from "./assets/addDevicePop.vue";
 import usePermissions from "@/hooks/usePermissions.js";
+import deviceVoicePop from "./assets/deviceVoicePop.vue";
 
+//控制语音接入弹窗显示显示状态
+const deviceVoiceVisible = ref(false);
+const deviceSn = ref('');
+const handleVoiceCall = (sn) => {
+  deviceVoiceVisible.value = true;
+  deviceSn.value = sn;
+}
 // 0.判断是否有增删改查的权限：'user:create'
 const isCreate = usePermissions('device:create')
 const isDelete = usePermissions('device:delete')

@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
-import  '../font_5088216_6d5luuvez9q/iconfont.css'
+import  '../font_5088216_0mvq8ei02qgj/iconfont.css'
 import router from './router'
 // 1. 导入Pinia
 import { createPinia } from 'pinia'
@@ -15,4 +15,5 @@ app.use(pinia)
 const loginStore = useLoginStore()
 loginStore.loadLocalCacheAction()
 app.use(router)
+
 app.mount('#app')

@@ -40,7 +40,7 @@ import { useTabsStore } from '@/store/tabs'
 
 const tabStore = useTabsStore()
 const router = useRouter()
-const userData = JSON.parse(localStorage.getItem('userInfo'))
+const userData = JSON.parse(localStorage.getItem('userInfo')) ||{}
 
 const emit = defineEmits(['fold-change'])
 const isFold = ref(false)
